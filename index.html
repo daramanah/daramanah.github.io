@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="fr" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DarAmanah | Conciergerie & Accompagnement Diaspora</title>
+  <meta name="description" content="DarAmanah veille sur vos biens au Maroc et en Algérie. Conciergerie immobilière, séjour parents accompagné, club sorties seniors. Rapports photo, intervenants vérifiés.">
+  <meta property="og:title" content="DarAmanah — Votre bien est entre de bonnes mains">
+  <meta property="og:description" content="Conciergerie immobilière pour la diaspora maghrébine. Surveillance, entretien, gestion locative au Maroc et en Algérie.">
+  <meta property="og:image" content="https://daramanah.family/assets/img/hero-bg.jpg">
+  <meta property="og:url" content="https://daramanah.family">
+  <meta property="og:type" content="website">
+  <link rel="canonical" href="https://daramanah.family">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter','sans-serif'], serif: ['Playfair Display','serif'] },
+          colors: { brand: { navy: '#0f172a', sand: '#f5f5f4', gold: '#b45309' } }
+        }
+      }
+    };
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    "name": "DarAmanah",
+    "description": "Conciergerie immobilière pour la diaspora maghrébine",
+    "url": "https://daramanah.family",
+    "email": "contact@daramanah.family",
+    "areaServed": [
+      { "@type": "Country", "name": "Morocco" },
+      { "@type": "Country", "name": "Algeria" }
+    ],
+    "serviceType": ["Property Management", "Concierge Service"]
+  }
+  </script>
+</head>
+<body class="bg-brand-sand text-brand-navy font-sans antialiased">
+
+  <!-- Header -->
+  <header class="bg-white shadow-sm sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <a href="/" class="text-2xl font-serif font-bold text-brand-navy">DarAmanah</a>
+        <span class="text-xs bg-brand-gold text-white px-2 py-1 rounded-full">Family</span>
+      </div>
+      <nav class="hidden md:flex space-x-8 text-sm font-medium text-gray-600">
+        <a href="/conciergerie/" class="hover:text-brand-gold transition">Conciergerie</a>
+        <a href="/sejour-parents/" class="hover:text-brand-gold transition">Séjour Parents</a>
+        <a href="/club-sorties/" class="hover:text-brand-gold transition">Club Sorties</a>
+        <a href="/tarifs/" class="hover:text-brand-gold transition">Tarifs</a>
+      </nav>
+      <div class="hidden md:flex items-center space-x-4">
+        <a href="/contact/" class="text-sm font-medium text-gray-600 hover:text-brand-navy">Se connecter</a>
+        <a href="/contact/" class="bg-brand-navy text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 transition">Estimer mon besoin</a>
+      </div>
+      <!-- Burger mobile -->
+      <button id="burger" class="md:hidden p-2" aria-label="Menu">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </div>
+    <!-- Mobile menu -->
+    <div id="mobile-menu" class="hidden md:hidden border-t border-gray-100 bg-white">
+      <div class="px-6 py-4 space-y-3">
+        <a href="/conciergerie/" class="block text-sm font-medium text-gray-600 hover:text-brand-gold">Conciergerie</a>
+        <a href="/sejour-parents/" class="block text-sm font-medium text-gray-600 hover:text-brand-gold">Séjour Parents</a>
+        <a href="/club-sorties/" class="block text-sm font-medium text-gray-600 hover:text-brand-gold">Club Sorties</a>
+        <a href="/tarifs/" class="block text-sm font-medium text-gray-600 hover:text-brand-gold">Tarifs</a>
+        <hr class="border-gray-200">
+        <a href="/contact/" class="block text-sm font-medium text-brand-navy">Se connecter</a>
+        <a href="/contact/" class="block text-center bg-brand-navy text-white px-5 py-2.5 rounded-lg text-sm font-medium">Estimer mon besoin</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="relative h-[80vh] flex items-center">
+    <div class="absolute inset-0">
+      <img src="/assets/img/hero-bg.jpg" alt="Vue sur le Maghreb" class="w-full h-full object-cover" loading="eager">
+      <div class="absolute inset-0 bg-brand-navy/60"></div>
+    </div>
+    <div class="relative z-10 max-w-7xl mx-auto px-6 w-full">
+      <div class="max-w-2xl text-white">
+        <h1 class="text-4xl md:text-6xl font-serif font-bold leading-tight mb-6">
+          Vos parents méritent de vraies vacances.<br>Et votre maison, une vraie tranquillité.
+        </h1>
+        <p class="text-lg md:text-xl text-gray-200 mb-8 font-light">
+          DarAmanah n'est pas une simple conciergerie. Nous entretenons vos biens et accompagnons vos parents au Maghreb. Gardez l'esprit libre, et suivez tout depuis votre téléphone.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4">
+          <a href="#services" class="bg-brand-gold hover:bg-amber-700 text-white px-8 py-4 rounded-lg text-center font-medium transition shadow-lg">Découvrir nos services</a>
+          <a href="#comment-ca-marche" class="bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white border border-white/30 px-8 py-4 rounded-lg text-center font-medium transition">Voir comment ça marche</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Bandeau confiance -->
+  <section class="bg-white py-8 border-b border-gray-100">
+    <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-center items-center gap-8 md:gap-16 text-center md:text-left">
+      <div class="flex items-center gap-3">
+        <span class="text-2xl">📍</span>
+        <span class="text-sm font-medium text-gray-600">Présents au Maroc et en Algérie</span>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="text-2xl">🤝</span>
+        <span class="text-sm font-medium text-gray-600">Prestataires 100% vérifiés</span>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="text-2xl">📱</span>
+        <span class="text-sm font-medium text-gray-600">Rapports photos quotidiens</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Services -->
+  <section id="services" class="py-20 max-w-7xl mx-auto px-6">
+    <div class="text-center max-w-2xl mx-auto mb-16">
+      <h2 class="text-3xl md:text-4xl font-serif font-bold text-brand-navy mb-4">Une présence sur mesure</h2>
+      <p class="text-gray-600">Sélectionnez le service adapté à vos besoins et à ceux de votre famille.</p>
+    </div>
+    <div class="grid md:grid-cols-3 gap-8">
+      <div class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition group">
+        <img src="/assets/img/service-conciergerie.jpg" alt="Maison propre" class="w-full h-48 object-cover group-hover:scale-105 transition duration-500" loading="lazy">
+        <div class="p-8">
+          <h3 class="text-xl font-bold mb-3 text-brand-navy">Conciergerie Biens</h3>
+          <p class="text-gray-600 text-sm mb-6 leading-relaxed">Veille, aération, préparation avant votre arrivée et gestion locative (Airbnb). Votre maison au pays, toujours prête à vous accueillir.</p>
+          <a href="/conciergerie/" class="text-brand-gold font-medium text-sm flex items-center gap-2 hover:gap-3 transition-all">En savoir plus &rarr;</a>
+        </div>
+      </div>
+      <div class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition group">
+        <img src="/assets/img/service-parents.jpg" alt="Accompagnement seniors" class="w-full h-48 object-cover group-hover:scale-105 transition duration-500" loading="lazy">
+        <div class="p-8">
+          <h3 class="text-xl font-bold mb-3 text-brand-navy">Séjour Parents</h3>
+          <p class="text-gray-600 text-sm mb-6 leading-relaxed">Une présence bienveillante au quotidien. Courses, accompagnement médical, ou simples promenades pour leur redonner le sourire.</p>
+          <a href="/sejour-parents/" class="text-brand-gold font-medium text-sm flex items-center gap-2 hover:gap-3 transition-all">Voir les packs &rarr;</a>
+        </div>
+      </div>
+      <div class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition group">
+        <img src="/assets/img/service-sorties.jpg" alt="Sortie seniors" class="w-full h-48 object-cover group-hover:scale-105 transition duration-500" loading="lazy">
+        <div class="p-8">
+          <h3 class="text-xl font-bold mb-3 text-brand-navy">Club Sorties Seniors</h3>
+          <p class="text-gray-600 text-sm mb-6 leading-relaxed">Briser la solitude. Des sorties en petits groupes (corniche, jardins, restaurants) avec transport adapté (PMR).</p>
+          <a href="/club-sorties/" class="text-brand-gold font-medium text-sm flex items-center gap-2 hover:gap-3 transition-all">Le programme &rarr;</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Comment ça marche -->
+  <section id="comment-ca-marche" class="bg-white py-20">
+    <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center gap-16">
+      <div class="md:w-1/2">
+        <h2 class="text-3xl md:text-4xl font-serif font-bold text-brand-navy mb-6">À des milliers de kilomètres, mais toujours ensemble.</h2>
+        <p class="text-gray-600 mb-8 text-lg">Gérez tout en famille avec notre espace client exclusif et sécurisé.</p>
+        <div class="space-y-6">
+          <div class="flex gap-4">
+            <div class="flex-shrink-0 w-10 h-10 rounded-full bg-brand-sand flex items-center justify-center text-brand-gold font-bold">1</div>
+            <div>
+              <h4 class="font-bold text-brand-navy">Le Compte Partagé</h4>
+              <p class="text-sm text-gray-600">Invitez vos frères et sœurs. Chacun peut suivre l'historique et les interventions.</p>
+            </div>
+          </div>
+          <div class="flex gap-4">
+            <div class="flex-shrink-0 w-10 h-10 rounded-full bg-brand-sand flex items-center justify-center text-brand-gold font-bold">2</div>
+            <div>
+              <h4 class="font-bold text-brand-navy">La Cagnotte Transparente</h4>
+              <p class="text-sm text-gray-600">Alimentez un fonds commun en euros. Nous déduisons les factures sur place, sans frais cachés.</p>
+            </div>
+          </div>
+          <div class="flex gap-4">
+            <div class="flex-shrink-0 w-10 h-10 rounded-full bg-brand-sand flex items-center justify-center text-brand-gold font-bold">3</div>
+            <div>
+              <h4 class="font-bold text-brand-navy">Des Nouvelles Tous Les Jours</h4>
+              <p class="text-sm text-gray-600">Recevez des photos et vidéos après chaque intervention ou sortie de vos parents.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Mockup téléphone -->
+      <div class="md:w-1/2 relative">
+        <div class="bg-gray-100 rounded-[3rem] p-4 border-8 border-gray-800 shadow-2xl max-w-sm mx-auto">
+          <div class="bg-white rounded-[2rem] h-[600px] overflow-hidden relative shadow-inner p-4">
+            <div class="flex justify-between items-center mb-6 pt-2">
+              <span class="font-bold">Famille Benali</span>
+              <span class="bg-green-100 text-green-700 text-xs px-2 py-1 rounded">Solde: 450€</span>
+            </div>
+            <img src="/assets/img/mockup-rapport.jpg" alt="Rapport intervention" class="w-full h-48 object-cover rounded-xl mb-4" loading="lazy">
+            <h5 class="font-bold text-sm mb-1">Rapport : Arrivée de Maman</h5>
+            <p class="text-xs text-gray-500 mb-4">Aéroport Casa &bull; 14:30</p>
+            <div class="bg-gray-50 p-3 rounded-lg text-sm text-gray-700">
+              "Maman est bien arrivée. Le chauffeur l'a déposée à l'appartement. Les courses sont rangées dans le frigo. Tout va bien !"
+            </div>
+            <button class="w-full bg-brand-navy text-white mt-6 py-3 rounded-lg text-sm">Voir la vidéo</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Option Solidaire -->
+  <section class="bg-brand-navy py-16 text-center text-white px-6">
+    <div class="max-w-3xl mx-auto">
+      <h2 class="text-3xl font-serif font-bold mb-4">Votre tranquillité d'esprit peut changer des vies.</h2>
+      <p class="text-gray-300 mb-8">Allouez le reliquat de votre cagnotte familiale à des projets locaux vérifiés (puits, écoles, aide aux seniors isolés).</p>
+      <a href="/contact/" class="inline-block border border-brand-gold text-brand-gold hover:bg-brand-gold hover:text-white px-8 py-3 rounded-lg transition font-medium">Découvrir l'Option Solidaire</a>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="py-16 bg-brand-sand">
+    <div class="max-w-4xl mx-auto px-6 text-center">
+      <h2 class="text-3xl font-serif font-bold mb-4">Prêt à protéger votre bien ?</h2>
+      <p class="text-gray-600 mb-8">Obtenez un devis gratuit en 2 minutes. Sans engagement.</p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <a href="/contact/" class="bg-brand-gold hover:bg-amber-700 text-white px-8 py-3 rounded-lg font-medium transition">Estimer mon besoin</a>
+        <a href="/tarifs/" class="border border-brand-navy text-brand-navy px-8 py-3 rounded-lg font-medium hover:bg-brand-navy hover:text-white transition">Voir les tarifs</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-slate-950 text-slate-400 py-12 text-sm">
+    <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-8">
+      <div>
+        <h3 class="text-white text-lg font-serif font-bold mb-4">DarAmanah</h3>
+        <p>La conciergerie de confiance pour la diaspora et ses proches au Maghreb.</p>
+      </div>
+      <div>
+        <h4 class="text-white font-bold mb-4">Services</h4>
+        <ul class="space-y-2">
+          <li><a href="/conciergerie/" class="hover:text-white transition">Conciergerie</a></li>
+          <li><a href="/sejour-parents/" class="hover:text-white transition">Séjours Parents</a></li>
+          <li><a href="/club-sorties/" class="hover:text-white transition">Club Sorties</a></li>
+          <li><a href="/tarifs/" class="hover:text-white transition">Tarifs</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="text-white font-bold mb-4">Légal</h4>
+        <ul class="space-y-2">
+          <li><a href="/mentions-legales/" class="hover:text-white transition">Mentions légales</a></li>
+          <li><a href="/mentions-legales/#cgv" class="hover:text-white transition">CGV</a></li>
+          <li><a href="/mentions-legales/#rgpd" class="hover:text-white transition">Confidentialité</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="text-white font-bold mb-4">Contact</h4>
+        <ul class="space-y-2">
+          <li><a href="mailto:contact@daramanah.family" class="hover:text-white transition">contact@daramanah.family</a></li>
+          <li><a href="https://wa.me/33600000000" class="hover:text-white transition">WhatsApp</a></li>
+          <li><a href="/contact/" class="hover:text-white transition">Formulaire de contact</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="max-w-7xl mx-auto px-6 mt-12 pt-8 border-t border-slate-800 text-center">
+      <p>&copy; 2026 DarAmanah.family. Tous droits réservés.</p>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('burger').addEventListener('click', function() {
+      document.getElementById('mobile-menu').classList.toggle('hidden');
+    });
+  </script>
+</body>
+</html>

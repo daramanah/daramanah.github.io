@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DarAmanah au Maroc — Conciergerie de confiance</title>
+  <meta name="description" content="DarAmanah au Maroc : conciergerie immobilière de confiance à Casablanca, Rabat, Marrakech et Agadir pour la diaspora et ses proches.">
+  <link rel="canonical" href="https://daramanah.family/ma/">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            serif: ['Playfair Display', 'serif']
+          },
+          colors: {
+            brand: {
+              navy: '#0f172a',
+              sand: '#f5f5f4',
+              gold: '#b45309'
+            }
+          }
+        }
+      }
+    };
+  </script>
+</head>
+<body class="font-sans text-gray-800 bg-white">
+
+  <!-- Header -->
+  <header class="bg-white shadow-sm sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <a href="/" class="text-2xl font-serif font-bold text-brand-navy">DarAmanah</a>
+        <span class="text-xs bg-brand-gold text-white px-2 py-1 rounded-full">Family</span>
+      </div>
+      <nav class="hidden md:flex space-x-8 text-sm font-medium text-gray-600">
+        <a href="/conciergerie/" class="hover:text-brand-gold transition">Conciergerie</a>
+        <a href="/sejour-parents/" class="hover:text-brand-gold transition">Séjour Parents</a>
+        <a href="/club-sorties/" class="hover:text-brand-gold transition">Club Sorties</a>
+        <a href="/tarifs/" class="hover:text-brand-gold transition">Tarifs</a>
+      </nav>
+      <div class="hidden md:flex items-center space-x-4">
+        <a href="/contact/" class="text-sm font-medium text-gray-600 hover:text-brand-navy">Se connecter</a>
+        <a href="/contact/" class="bg-brand-navy text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 transition">Estimer mon besoin</a>
+      </div>
+      <button id="burger" class="md:hidden p-2" aria-label="Menu"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+    </div>
+    <div id="mobile-menu" class="hidden md:hidden border-t border-gray-100 bg-white">
+      <div class="px-6 py-4 space-y-3">
+        <a href="/conciergerie/" class="block text-sm font-medium text-gray-600">Conciergerie</a>
+        <a href="/sejour-parents/" class="block text-sm font-medium text-gray-600">Séjour Parents</a>
+        <a href="/club-sorties/" class="block text-sm font-medium text-gray-600">Club Sorties</a>
+        <a href="/tarifs/" class="block text-sm font-medium text-gray-600">Tarifs</a>
+        <hr class="border-gray-200">
+        <a href="/contact/" class="block text-sm font-medium text-brand-navy">Se connecter</a>
+        <a href="/contact/" class="block text-center bg-brand-navy text-white px-5 py-2.5 rounded-lg text-sm font-medium">Estimer mon besoin</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- Hero -->
+    <section class="bg-brand-sand py-20">
+      <div class="max-w-7xl mx-auto px-6 text-center">
+        <h1 class="text-4xl md:text-5xl font-serif font-bold text-brand-navy mb-6">DarAmanah au Maroc</h1>
+        <p class="text-lg text-gray-600 max-w-2xl mx-auto">Nous accompagnons la diaspora marocaine dans la gestion de leurs biens et le bien-être de leurs proches, dans les principales villes du Royaume.</p>
+      </div>
+    </section>
+
+    <!-- City Cards -->
+    <section class="py-20">
+      <div class="max-w-7xl mx-auto px-6">
+        <h2 class="text-3xl font-serif font-bold text-brand-navy text-center mb-4">Nos villes d'intervention</h2>
+        <p class="text-gray-600 text-center mb-12 max-w-xl mx-auto">Découvrez nos services disponibles dans chaque ville.</p>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+
+          <!-- Casablanca -->
+          <div class="bg-white border border-gray-200 rounded-2xl p-8 hover:shadow-lg transition text-center">
+            <div class="text-5xl mb-4">&#127961;</div>
+            <h3 class="text-xl font-bold text-brand-navy mb-3">Casablanca</h3>
+            <ul class="text-sm text-gray-600 space-y-2 text-left">
+              <li class="flex items-start gap-2"><span class="text-brand-gold font-bold">&#10003;</span> Conciergerie immobilière</li>
+              <li class="flex items-start gap-2"><span class="text-brand-gold font-bold">&#10003;</span> Surveillance & entretien</li>
+              <li class="flex items-start gap-2"><span class="text-brand-gold font-bold">&#10003;</span> Gestion locative Airbnb</li>
+              <li class="flex items-start gap-2"><span class="text-brand-gold font-bold">&#10003;</span> Remise de clés</li>
+            </ul>
+          </div>
+
+          <!-- Rabat -->
+          <div class="bg-white border border-gray-200 rounded-2xl p-8 hover:shadow-lg transition text-center">
+            <div class="text-5xl mb-4">&#127984;</div>
+            <h3 class="text-xl font-bold text-brand-navy mb-3">Rabat</h3>
+            <ul class="text-sm text-gray-600 space-y-2 text-left">
+              <li class="flex items-start gap-2"><span class="text-brand-gold font-bold">&#10003;</span> Conciergerie immobilière</li>
+              <li class="flex items-start gap-2"><span class="text-brand-gold font-bold">&#10003;</span> Surveillance & entretien</li>
+              <li class="flex items-start gap-2"><span class="text-brand-gold font-bold">&#10003;</span> Relevé de compteurs</li>
+              <li class="flex items-start gap-2"><span class="text-brand-gold font-bold">&#10003;</span> Ménage & jardinage</li>
+            </ul>
+          </div>
+
+          <!-- Marrakech -->
+          <div class="bg-white border border-gray-200 rounded-2xl p-8 hover:shadow-lg transition text-center">
+            <div class="text-5xl mb-4">&#127796;</div>
+            <h3 class="text-xl font-bold text-brand-navy mb-3">Marrakech</h3>
+            <ul class="text-sm text-gray-600 space-y-2 text-left">
+              <li class="flex items-start gap-2"><span class="text-brand-gold font-bold">&#10003;</span> Conciergerie immobilière</li>
+              <li class="flex items-start gap-2"><span class="text-brand-gold font-bold">&#10003;</span> Gestion locative Airbnb</li>
+              <li class="flex items-start gap-2"><span class="text-brand-gold font-bold">&#10003;</span> Entretien piscine & jardin</li>
+              <li class="flex items-start gap-2"><span class="text-brand-gold font-bold">&#10003;</span> Remise de clés</li>
+            </ul>
+          </div>
+
+          <!-- Agadir -->
+          <div class="bg-white border border-gray-200 rounded-2xl p-8 hover:shadow-lg transition text-center">
+            <div class="text-5xl mb-4">&#127754;</div>
+            <h3 class="text-xl font-bold text-brand-navy mb-3">Agadir</h3>
+            <ul class="text-sm text-gray-600 space-y-2 text-left">
+              <li class="flex items-start gap-2"><span class="text-brand-gold font-bold">&#10003;</span> Conciergerie immobilière</li>
+              <li class="flex items-start gap-2"><span class="text-brand-gold font-bold">&#10003;</span> Surveillance & entretien</li>
+              <li class="flex items-start gap-2"><span class="text-brand-gold font-bold">&#10003;</span> Ménage de fond</li>
+              <li class="flex items-start gap-2"><span class="text-brand-gold font-bold">&#10003;</span> Relevé de compteurs</li>
+            </ul>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="bg-brand-navy py-20">
+      <div class="max-w-3xl mx-auto px-6 text-center">
+        <h2 class="text-3xl font-serif font-bold text-white mb-4">Votre bien au Maroc mérite une attention de confiance</h2>
+        <p class="text-slate-300 mb-8">Contactez-nous pour obtenir un devis personnalisé adapté à votre ville et à vos besoins.</p>
+        <a href="/contact/" class="inline-block bg-brand-gold text-white px-8 py-3.5 rounded-lg text-sm font-semibold hover:bg-amber-700 transition">Demander un devis gratuit</a>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-slate-950 text-slate-400 py-12 text-sm">
+    <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-8">
+      <div><h3 class="text-white text-lg font-serif font-bold mb-4">DarAmanah</h3><p>La conciergerie de confiance pour la diaspora et ses proches au Maghreb.</p></div>
+      <div><h4 class="text-white font-bold mb-4">Services</h4><ul class="space-y-2"><li><a href="/conciergerie/" class="hover:text-white transition">Conciergerie</a></li><li><a href="/sejour-parents/" class="hover:text-white transition">Séjours Parents</a></li><li><a href="/club-sorties/" class="hover:text-white transition">Club Sorties</a></li><li><a href="/tarifs/" class="hover:text-white transition">Tarifs</a></li></ul></div>
+      <div><h4 class="text-white font-bold mb-4">Légal</h4><ul class="space-y-2"><li><a href="/mentions-legales/" class="hover:text-white transition">Mentions légales</a></li><li><a href="/mentions-legales/#cgv" class="hover:text-white transition">CGV</a></li><li><a href="/mentions-legales/#rgpd" class="hover:text-white transition">Confidentialité</a></li></ul></div>
+      <div><h4 class="text-white font-bold mb-4">Contact</h4><ul class="space-y-2"><li><a href="mailto:contact@daramanah.family" class="hover:text-white transition">contact@daramanah.family</a></li><li><a href="/contact/" class="hover:text-white transition">Formulaire</a></li></ul></div>
+    </div>
+    <div class="max-w-7xl mx-auto px-6 mt-12 pt-8 border-t border-slate-800 text-center"><p>&copy; 2026 DarAmanah.family. Tous droits réservés.</p></div>
+  </footer>
+  <script>document.getElementById('burger').addEventListener('click',function(){document.getElementById('mobile-menu').classList.toggle('hidden')});</script>
+
+</body>
+</html>
