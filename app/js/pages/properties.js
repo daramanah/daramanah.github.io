@@ -28,7 +28,7 @@ function renderPropertyCard(p) {
     <div class="flex items-start justify-between mb-3">
       <div>
         <h3 class="font-bold text-brand-navy">${p.name}</h3>
-        <p class="text-sm text-gray-500 mt-0.5">${flag} ${p.address_text || p.city || ''}</p>
+        <p class="text-sm text-gray-500 mt-0.5">${flag} ${p.service_area_city || p.city || ''} ${p.address_text ? '· ' + p.address_text : ''}</p>
       </div>
       ${activeReqs > 0 ? `<span class="bg-amber-100 text-brand-gold text-xs font-semibold px-2 py-1 rounded-full">${activeReqs} demande${activeReqs > 1 ? 's' : ''}</span>` : ''}
     </div>

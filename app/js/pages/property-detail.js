@@ -42,7 +42,10 @@ async function bind(params) {
 
     const p = propData.property;
     const requests = reqsData.requests || [];
-    const sub = (subsData.subscriptions || []).find(s => s.property_id === propertyId);
+    // Find subscription matching this property's service area
+    const sub = (subsData.subscriptions || []).find(s =>
+      (p.service_area_id && s.service_area_id === p.service_area_id) || s.property_id === propertyId
+    );
 
     const flag = COUNTRY_FLAGS[p.country] || '';
     const typeName = TYPE_LABELS[p.type] || p.type || 'Bien';
@@ -64,7 +67,7 @@ async function bind(params) {
       <div class="flex items-start justify-between mb-6">
         <div>
           <h1 class="text-2xl font-serif font-bold text-brand-navy">${p.name}</h1>
-          <p class="text-gray-500 text-sm mt-1">${flag} ${p.address_text || p.city || ''}</p>
+          <p class="text-gray-500 text-sm mt-1">${flag} ${p.service_area_city || p.city || ''} ${p.address_text ? '\u00b7 ' + p.address_text : ''}</p>
         </div>
         <span class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full ${p.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}">
           <span class="w-2 h-2 rounded-full ${p.status === 'active' ? 'bg-green-500' : 'bg-gray-400'}"></span>
@@ -80,7 +83,7 @@ async function bind(params) {
             <div class="flex justify-between"><span class="text-gray-500">Type</span><span class="font-medium">${typeName}</span></div>
             ${surface ? `<div class="flex justify-between"><span class="text-gray-500">Surface</span><span class="font-medium">${surface}</span></div>` : ''}
             ${rooms ? `<div class="flex justify-between"><span class="text-gray-500">Pi\u00E8ces</span><span class="font-medium">${rooms}</span></div>` : ''}
-            <div class="flex justify-between"><span class="text-gray-500">Ville</span><span class="font-medium">${p.city || '-'}</span></div>
+            <div class="flex justify-between"><span class="text-gray-500">Zone de service</span><span class="font-medium">${p.service_area_city || p.city || '-'}</span></div>
             <div class="flex justify-between"><span class="text-gray-500">Pays</span><span class="font-medium">${flag} ${p.country || '-'}</span></div>
           </div>
           ${p.description ? `<p class="text-sm text-gray-500 mt-4 pt-3 border-t border-gray-100">${p.description}</p>` : ''}
