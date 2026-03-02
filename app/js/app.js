@@ -8,6 +8,7 @@ const staticRoutes = {
   '/register': () => import('./pages/register.js'),
   '/dashboard': () => import('./pages/dashboard.js'),
   '/properties': () => import('./pages/properties.js'),
+  '/properties/new': () => import('./pages/property-new.js'),
   '/requests': () => import('./pages/requests.js'),
   '/requests/new': () => import('./pages/request-new.js'),
   '/payments': () => import('./pages/payments.js'),
