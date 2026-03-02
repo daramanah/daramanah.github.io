@@ -24,7 +24,7 @@ function renderPropertyCard(p) {
   const activeReqs = p.active_requests || 0;
 
   return `
-  <div class="bg-white rounded-xl border border-gray-200 p-5 card-hover">
+  <a href="#/properties/${p.id}" class="block bg-white rounded-xl border border-gray-200 p-5 card-hover cursor-pointer">
     <div class="flex items-start justify-between mb-3">
       <div>
         <h3 class="font-bold text-brand-navy">${p.name}</h3>
@@ -39,7 +39,7 @@ function renderPropertyCard(p) {
         ${p.status === 'active' ? 'Actif' : p.status === 'archived' ? 'Archivé' : p.status || 'Actif'}
       </span>
     </div>
-  </div>`;
+  </a>`;
 }
 
 function render() {

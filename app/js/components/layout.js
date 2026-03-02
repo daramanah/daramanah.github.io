@@ -5,7 +5,8 @@ import { getCachedUser, logout } from '../auth.js';
 
 function getCurrentRoute() {
   const hash = window.location.hash || '#/dashboard';
-  return hash.replace('#/', '').split('?')[0];
+  // Get the base route segment for nav matching (e.g. /properties/abc → properties)
+  return hash.replace('#/', '').split('?')[0].split('/')[0];
 }
 
 function renderLayout(contentHtml) {
