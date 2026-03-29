@@ -154,7 +154,7 @@ async function bind() {
     }
 
     // =============================================
-    // SECTION 3 — Interventions à la carte
+    // SECTION 3 — Interventions à la carte (panier multi-services)
     // =============================================
     const propOptions = properties.map(p =>
       `<option value="${p.id}">${p.name} \u2014 ${p.service_area_city || p.city || ''}</option>`
@@ -163,21 +163,33 @@ async function bind() {
     const oneOffHtml = `
       <div class="bg-white rounded-xl border border-gray-200 p-6">
         <h2 class="text-lg font-bold text-brand-navy mb-1">Interventions \u00e0 la carte</h2>
-        <p class="text-sm text-gray-500 mb-5">Pas besoin d\u2019abonnement. Commandez une intervention quand vous en avez besoin.</p>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <p class="text-sm text-gray-500 mb-5">S\u00e9lectionnez une ou plusieurs interventions, puis validez votre commande.</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="oneoff-cards">
           ${ONE_OFF_SERVICES.map(s => `
-          <div class="border border-gray-200 rounded-xl p-5 flex flex-col hover:shadow-md transition">
-            <h3 class="font-bold text-brand-navy mb-1">${s.name}</h3>
+          <div class="oneoff-card border-2 border-gray-200 rounded-xl p-5 flex flex-col hover:shadow-md transition cursor-pointer" data-service="${s.id}" data-price="${s.price}" data-name="${s.name}">
+            <div class="flex items-start justify-between mb-1">
+              <h3 class="font-bold text-brand-navy">${s.name}</h3>
+              <div class="oneoff-check hidden w-6 h-6 bg-green-500 rounded-full flex items-center justify-center shrink-0">
+                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+              </div>
+            </div>
             <p class="text-xs text-gray-500 mb-3">${s.desc}</p>
-            <p class="text-2xl font-bold text-brand-navy mb-4">${(s.price / 100).toFixed(0)}\u20AC</p>
-            <button class="oneoff-btn mt-auto w-full bg-brand-gold text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-amber-700 transition" data-service="${s.id}">Commander</button>
+            <p class="text-2xl font-bold text-brand-navy mt-auto">${(s.price / 100).toFixed(0)}\u20AC</p>
           </div>`).join('')}
         </div>
 
-        <!-- Formulaire de commande (cach\u00e9 par d\u00e9faut) -->
-        <div id="oneoff-form" class="hidden mt-6 bg-brand-sand rounded-xl p-5 border border-gray-200">
-          <h3 class="text-sm font-bold text-brand-navy mb-4" id="oneoff-form-title"></h3>
-          <div class="space-y-4">
+        <!-- Panier (cach\u00e9 si vide) -->
+        <div id="oneoff-cart" class="hidden mt-6 bg-brand-sand rounded-xl p-5 border border-gray-200">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-bold text-brand-navy">Votre s\u00e9lection</h3>
+            <button id="oneoff-clear" class="text-xs text-gray-500 hover:text-red-600 transition">Tout retirer</button>
+          </div>
+          <div id="oneoff-cart-items" class="space-y-2 mb-4"></div>
+          <div class="flex items-center justify-between py-3 border-t border-gray-300">
+            <span class="text-sm font-bold text-brand-navy">Total</span>
+            <span class="text-xl font-bold text-brand-navy" id="oneoff-total"></span>
+          </div>
+          <div class="mt-4 space-y-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1.5">Bien concern\u00e9</label>
               <select id="oneoff-property" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm bg-white">
@@ -190,10 +202,7 @@ async function bind() {
               <input type="text" id="oneoff-notes" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm" placeholder="Instructions particuli\u00e8res...">
             </div>
             <div id="oneoff-status" class="hidden"></div>
-            <div class="flex gap-3 items-center">
-              <button id="oneoff-pay" class="bg-brand-gold text-white px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-amber-700 transition"></button>
-              <button id="oneoff-cancel" class="text-sm text-gray-500 hover:text-gray-700 transition">Annuler</button>
-            </div>
+            <button id="oneoff-pay" class="w-full bg-brand-gold text-white py-3 rounded-lg text-sm font-bold hover:bg-amber-700 transition"></button>
           </div>
         </div>
       </div>`;
@@ -287,34 +296,85 @@ async function bind() {
     });
 
     // =============================================
-    // EVENT HANDLERS — One-off
+    // EVENT HANDLERS — One-off (panier multi-services)
     // =============================================
-    let selectedService = null;
-    const oneoffForm = document.getElementById('oneoff-form');
-    const oneoffTitle = document.getElementById('oneoff-form-title');
+    const cart = new Map(); // service_id → service object
+    const cartEl = document.getElementById('oneoff-cart');
+    const cartItemsEl = document.getElementById('oneoff-cart-items');
+    const cartTotalEl = document.getElementById('oneoff-total');
     const oneoffPayBtn = document.getElementById('oneoff-pay');
 
-    document.querySelectorAll('.oneoff-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const svc = ONE_OFF_SERVICES.find(s => s.id === btn.dataset.service);
-        if (!svc) return;
-        selectedService = svc;
-        oneoffTitle.textContent = `Commander : ${svc.name} (${(svc.price / 100).toFixed(0)}\u20AC)`;
-        oneoffPayBtn.textContent = `Payer \u2014 ${(svc.price / 100).toFixed(0)}\u20AC`;
-        document.getElementById('oneoff-status')?.classList.add('hidden');
-        document.getElementById('oneoff-prop-error')?.classList.add('hidden');
-        oneoffForm.classList.remove('hidden');
-        oneoffForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    function updateCart() {
+      if (cart.size === 0) {
+        cartEl.classList.add('hidden');
+        return;
+      }
+      cartEl.classList.remove('hidden');
+      let total = 0;
+      cartItemsEl.innerHTML = [...cart.values()].map(s => {
+        total += s.price;
+        return `<div class="flex items-center justify-between py-2">
+          <span class="text-sm text-gray-700">${s.name}</span>
+          <div class="flex items-center gap-3">
+            <span class="text-sm font-bold text-brand-navy">${(s.price / 100).toFixed(0)}\u20AC</span>
+            <button class="cart-remove text-gray-400 hover:text-red-500 transition" data-service="${s.id}" title="Retirer">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+          </div>
+        </div>`;
+      }).join('');
+      cartTotalEl.textContent = `${(total / 100).toFixed(0)}\u20AC`;
+      oneoffPayBtn.textContent = `Payer \u2014 ${(total / 100).toFixed(0)}\u20AC`;
+
+      // Bind remove buttons
+      cartItemsEl.querySelectorAll('.cart-remove').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          toggleService(btn.dataset.service);
+        });
       });
+
+      cartEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function toggleService(serviceId) {
+      const card = document.querySelector(`.oneoff-card[data-service="${serviceId}"]`);
+      if (cart.has(serviceId)) {
+        cart.delete(serviceId);
+        card?.classList.remove('border-green-500', 'bg-green-50');
+        card?.classList.add('border-gray-200');
+        card?.querySelector('.oneoff-check')?.classList.add('hidden');
+      } else {
+        const svc = ONE_OFF_SERVICES.find(s => s.id === serviceId);
+        if (svc) {
+          cart.set(serviceId, svc);
+          card?.classList.add('border-green-500', 'bg-green-50');
+          card?.classList.remove('border-gray-200');
+          card?.querySelector('.oneoff-check')?.classList.remove('hidden');
+        }
+      }
+      updateCart();
+    }
+
+    // Click on service cards to toggle
+    document.querySelectorAll('.oneoff-card').forEach(card => {
+      card.addEventListener('click', () => toggleService(card.dataset.service));
     });
 
-    document.getElementById('oneoff-cancel')?.addEventListener('click', () => {
-      oneoffForm.classList.add('hidden');
-      selectedService = null;
+    // Clear all
+    document.getElementById('oneoff-clear')?.addEventListener('click', () => {
+      cart.clear();
+      document.querySelectorAll('.oneoff-card').forEach(c => {
+        c.classList.remove('border-green-500', 'bg-green-50');
+        c.classList.add('border-gray-200');
+        c.querySelector('.oneoff-check')?.classList.add('hidden');
+      });
+      updateCart();
     });
 
+    // Pay button
     oneoffPayBtn?.addEventListener('click', async () => {
-      if (!selectedService) return;
+      if (cart.size === 0) return;
       const propertyId = document.getElementById('oneoff-property').value;
       const propError = document.getElementById('oneoff-prop-error');
       const statusEl = document.getElementById('oneoff-status');
@@ -329,17 +389,20 @@ async function bind() {
       propError?.classList.add('hidden');
 
       oneoffPayBtn.disabled = true;
-      oneoffPayBtn.innerHTML = '<div class="spinner" style="width:18px;height:18px;display:inline-block;vertical-align:middle;margin-right:8px"></div> Redirection...';
+      oneoffPayBtn.innerHTML = '<div class="spinner" style="width:18px;height:18px;display:inline-block;vertical-align:middle;margin-right:8px"></div> Redirection vers Stripe...';
       statusEl.innerHTML = '<p class="text-sm text-gray-500">Cr\u00e9ation du paiement...</p>';
       statusEl.classList.remove('hidden');
 
       const notes = document.getElementById('oneoff-notes').value.trim();
-      const desc = notes ? `${selectedService.name} \u2014 ${notes}` : selectedService.name;
+      const items = [...cart.values()].map(s => ({
+        amount: s.price,
+        description: notes ? `${s.name} \u2014 ${notes}` : s.name,
+      }));
 
       try {
         const data = await apiFetch('/api/payments/one-off', {
           method: 'POST',
-          body: JSON.stringify({ amount: selectedService.price, description: desc, property_id: propertyId }),
+          body: JSON.stringify({ items, property_id: propertyId }),
         });
         if (data.checkout_url) {
           statusEl.innerHTML = '<p class="text-sm text-green-600 font-medium">Redirection vers Stripe...</p>';
@@ -351,7 +414,8 @@ async function bind() {
         statusEl.innerHTML = `<p class="text-sm text-red-600">Erreur : ${err.message || 'Impossible de cr\u00e9er le paiement'}</p>`;
         statusEl.classList.remove('hidden');
         oneoffPayBtn.disabled = false;
-        oneoffPayBtn.textContent = `Payer \u2014 ${(selectedService.price / 100).toFixed(0)}\u20AC`;
+        const total = [...cart.values()].reduce((s, v) => s + v.price, 0);
+        oneoffPayBtn.textContent = `Payer \u2014 ${(total / 100).toFixed(0)}\u20AC`;
       }
     });
 
