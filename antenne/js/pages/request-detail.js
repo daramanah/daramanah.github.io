@@ -52,10 +52,17 @@ async function bind(params) {
       <div class="border border-gray-200 rounded-lg p-4">
         <div class="flex justify-between mb-2">
           <span class="text-sm font-semibold">${rep.agent_first_name || 'Agent'} ${rep.agent_last_name || ''}</span>
-          <span class="text-xs text-gray-400">${new Date(rep.created_at).toLocaleDateString('fr-FR')}</span>
+          <span class="text-xs text-gray-400">${new Date(rep.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
         </div>
-        ${rep.notes ? `<p class="text-sm text-gray-600 mb-2">${rep.notes}</p>` : ''}
-        ${rep.checklist ? `<p class="text-xs text-gray-500">Checklist : ${rep.checklist}</p>` : ''}
+        ${rep.notes ? `<p class="text-sm text-gray-600 mb-3">${rep.notes}</p>` : ''}
+        ${rep.checklist ? `<div class="mb-3"><p class="text-xs font-semibold text-gray-500 mb-1">Checklist :</p><p class="text-sm text-gray-600">${rep.checklist}</p></div>` : ''}
+        ${rep.media_keys ? `
+          <div>
+            <p class="text-xs font-semibold text-gray-500 mb-2">Photos :</p>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              ${rep.media_keys.split(',').map(k => `<div class="aspect-video bg-gray-100 rounded-lg overflow-hidden"><img src="${k.trim()}" alt="Photo rapport" class="w-full h-full object-cover" loading="lazy"></div>`).join('')}
+            </div>
+          </div>` : ''}
       </div>`).join('') : '<p class="text-sm text-gray-400 text-center py-3">Aucun rapport</p>';
 
     document.getElementById('rd-content').innerHTML = `
