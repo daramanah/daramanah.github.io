@@ -12,6 +12,8 @@ const staticRoutes = {
   '/requests': () => import('./pages/requests.js'),
   '/requests/new': () => import('./pages/request-new.js'),
   '/payments': () => import('./pages/payments.js'),
+  '/payments/success': () => import('./pages/payment-success.js'),
+  '/payments/cancel': () => import('./pages/payment-cancel.js'),
   '/profile': () => import('./pages/profile.js'),
 };
 

@@ -1,4 +1,4 @@
-// DarAmanah — Payments page (subscription + invoices)
+// DarAmanah — Payments page (subscriptions + checkout + invoices)
 
 import { apiFetch } from '../api.js';
 import { renderLayout, bindLayoutEvents } from '../components/layout.js';
@@ -8,11 +8,26 @@ const COUNTRY_FLAGS = { MA: '\u{1F1F2}\u{1F1E6}', DZ: '\u{1F1E9}\u{1F1FF}', TN: 
 const INVOICE_STATUS = { pending: 'En attente', paid: 'Pay\u00e9e', failed: '\u00c9chou\u00e9e', refunded: 'Rembours\u00e9e' };
 const INVOICE_COLORS = { pending: 'bg-yellow-100 text-yellow-800', paid: 'bg-green-100 text-green-800', failed: 'bg-red-100 text-red-800', refunded: 'bg-gray-100 text-gray-800' };
 
+const PLAN_DETAILS = {
+  veille: {
+    name: 'Veille', price: 45, color: 'border-gray-200',
+    features: ['1 visite / mois', 'V\u00e9rification \u00e9tat g\u00e9n\u00e9ral', 'A\u00e9ration du bien', 'Relev\u00e9 compteurs', 'Rapport photo d\u00e9taill\u00e9'],
+  },
+  confort: {
+    name: 'Confort', price: 89, color: 'border-brand-gold', badge: 'Populaire',
+    features: ['2 visites / mois', 'Tout Veille inclus', 'M\u00e9nage avant arriv\u00e9e', 'Courses de base', 'Coordination artisans'],
+  },
+  premium: {
+    name: 'Premium', price: 179, color: 'border-brand-navy',
+    features: ['Tout Confort inclus', 'Petites r\u00e9parations', 'Gestion courrier', 'Entretien jardin', 'Interlocuteur d\u00e9di\u00e9'],
+  },
+};
+
 function render() {
   const content = `
     <div class="mb-6">
       <h1 class="text-2xl font-serif font-bold text-brand-navy">Paiements</h1>
-      <p class="text-gray-500 text-sm mt-1">Gérez votre abonnement et consultez vos factures</p>
+      <p class="text-gray-500 text-sm mt-1">G\u00e9rez votre abonnement et consultez vos factures</p>
     </div>
 
     <div id="pay-loading" class="flex items-center justify-center py-12"><div class="spinner"></div></div>
@@ -25,23 +40,35 @@ async function bind() {
   bindLayoutEvents();
 
   try {
-    const [subsData, invData] = await Promise.all([
+    const [subsData, invData, propsData] = await Promise.all([
       apiFetch('/api/payments/subscriptions'),
       apiFetch('/api/payments/invoices'),
+      apiFetch('/api/properties'),
     ]);
 
     const subs = subsData.subscriptions || [];
     const invoices = invData.invoices || [];
+    const properties = propsData.properties || [];
     const activeSubs = subs.filter(s => s.status === 'active');
 
-    // Subscription cards — one per city
+    // Find cities where client has properties but no active subscription
+    const subscribedAreaIds = new Set(activeSubs.map(s => s.service_area_id));
+    const propAreas = new Map();
+    properties.forEach(p => {
+      if (p.service_area_id && !subscribedAreaIds.has(p.service_area_id)) {
+        propAreas.set(p.service_area_id, { id: p.service_area_id, city: p.service_area_city || p.city, country: p.country });
+      }
+    });
+    const uncoveredAreas = [...propAreas.values()];
+
+    // --- Subscriptions section ---
     let subHtml;
     if (activeSubs.length > 0) {
       subHtml = `<div class="space-y-4">
         <h2 class="text-lg font-bold text-brand-navy">Mes abonnements</h2>
         ${activeSubs.map(sub => {
           const flag = COUNTRY_FLAGS[sub.service_area_country] || '';
-          const city = sub.service_area_city || sub.property_name || '-';
+          const city = sub.service_area_city || '-';
           return `
           <div class="bg-white rounded-xl border border-gray-200 p-6">
             <div class="flex items-start justify-between mb-4">
@@ -64,6 +91,7 @@ async function bind() {
                 <p class="text-sm font-medium text-gray-700">${new Date(sub.current_period_start || sub.created_at).toLocaleDateString('fr-FR')}</p>
               </div>
             </div>
+            <p class="text-xs text-gray-400 mt-4">Pour changer de formule ou r\u00e9silier : <a href="mailto:contact@daramanah.family" class="text-brand-gold hover:underline">contact@daramanah.family</a></p>
           </div>`;
         }).join('')}
       </div>`;
@@ -75,11 +103,52 @@ async function bind() {
         </div>
         <h2 class="text-lg font-bold text-brand-navy mb-1">Aucun abonnement</h2>
         <p class="text-sm text-gray-500 mb-4">Souscrivez \u00e0 un abonnement pour b\u00e9n\u00e9ficier de nos services</p>
-        <a href="https://daramanah.family/tarifs/" target="_blank" class="inline-block bg-brand-navy text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-slate-800 transition">Voir les tarifs</a>
       </div>`;
     }
 
-    // Invoices table
+    // --- Subscribe CTA ---
+    let subscribeCta = '';
+    if (uncoveredAreas.length > 0) {
+      const areaOptions = uncoveredAreas.map(a => `<option value="${a.id}">${a.city} ${COUNTRY_FLAGS[a.country] || ''}</option>`).join('');
+
+      subscribeCta = `
+      <div class="bg-white rounded-xl border-2 border-dashed border-brand-gold p-6" id="subscribe-section">
+        <h2 class="text-lg font-bold text-brand-navy mb-1">Souscrire un abonnement</h2>
+        <p class="text-sm text-gray-500 mb-5">Choisissez une ville et une formule pour prot\u00e9ger vos biens</p>
+
+        <!-- Step 1: City -->
+        <div class="mb-6">
+          <label class="block text-sm font-medium text-gray-700 mb-2">Ville</label>
+          <select id="checkout-city" class="w-full sm:w-64 px-4 py-2.5 border border-gray-300 rounded-lg text-sm bg-white">
+            ${uncoveredAreas.length === 1 ? '' : '<option value="">S\u00e9lectionnez une ville</option>'}
+            ${areaOptions}
+          </select>
+        </div>
+
+        <!-- Step 2: Plans -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6" id="plan-cards">
+          ${Object.entries(PLAN_DETAILS).map(([key, p]) => `
+          <div class="relative bg-white rounded-xl border-2 ${p.color} p-5 cursor-pointer plan-card transition hover:shadow-md" data-plan="${key}">
+            ${p.badge ? `<span class="absolute -top-3 left-1/2 -translate-x-1/2 bg-brand-gold text-white text-xs font-semibold px-3 py-1 rounded-full">${p.badge}</span>` : ''}
+            <h3 class="text-lg font-bold text-brand-navy mb-1">${p.name}</h3>
+            <p class="text-3xl font-bold text-brand-navy mb-4">${p.price}\u20AC<span class="text-sm text-gray-500 font-normal">/mois</span></p>
+            <ul class="space-y-2 mb-5">
+              ${p.features.map(f => `<li class="flex items-start gap-2 text-sm text-gray-600"><svg class="w-4 h-4 text-green-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>${f}</li>`).join('')}
+            </ul>
+            <button class="checkout-btn w-full bg-brand-gold text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-amber-700 transition" data-plan="${key}">
+              Souscrire \u2014 ${p.price}\u20AC/mois
+            </button>
+          </div>`).join('')}
+        </div>
+      </div>`;
+    } else if (properties.length > 0 && activeSubs.length > 0) {
+      subscribeCta = `
+      <div class="bg-green-50 rounded-xl border border-green-200 p-5 text-center">
+        <p class="text-sm text-green-700 font-medium">Vous \u00eates abonn\u00e9 dans toutes vos villes</p>
+      </div>`;
+    }
+
+    // --- Invoices section ---
     const invoicesHtml = invoices.length > 0 ? `
       <div class="bg-white rounded-xl border border-gray-200 p-6">
         <h2 class="text-lg font-bold text-brand-navy mb-4">Historique des factures</h2>
@@ -106,7 +175,7 @@ async function bind() {
                   <span class="text-xs px-2 py-0.5 rounded-full font-medium ${INVOICE_COLORS[inv.status] || 'bg-gray-100 text-gray-600'}">${INVOICE_STATUS[inv.status] || inv.status}</span>
                 </td>
                 <td class="py-3 text-right">
-                  ${inv.status === 'paid' ? `<a href="https://api.daramanah.family/api/payments/invoices/${inv.id}/pdf" target="_blank" class="text-brand-gold hover:underline text-xs font-medium">Télécharger</a>` : ''}
+                  ${inv.status === 'paid' ? `<a href="https://api.daramanah.family/api/payments/invoices/${inv.id}/pdf" target="_blank" class="text-brand-gold hover:underline text-xs font-medium">T\u00e9l\u00e9charger</a>` : ''}
                 </td>
               </tr>`).join('')}
             </tbody>
@@ -117,9 +186,47 @@ async function bind() {
         <p class="text-sm text-gray-400">Aucune facture</p>
       </div>`;
 
-    document.getElementById('pay-content').innerHTML = subHtml + invoicesHtml;
+    document.getElementById('pay-content').innerHTML = subHtml + subscribeCta + invoicesHtml;
     document.getElementById('pay-loading').classList.add('hidden');
     document.getElementById('pay-content').classList.remove('hidden');
+
+    // --- Checkout click handlers ---
+    document.querySelectorAll('.checkout-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const plan = e.target.dataset.plan;
+        const citySelect = document.getElementById('checkout-city');
+        const serviceAreaId = citySelect?.value;
+
+        if (!serviceAreaId) {
+          citySelect?.focus();
+          citySelect?.classList.add('border-red-400');
+          return;
+        }
+        citySelect?.classList.remove('border-red-400');
+
+        // Disable all buttons
+        document.querySelectorAll('.checkout-btn').forEach(b => { b.disabled = true; b.textContent = '...'; });
+        e.target.innerHTML = '<div class="spinner" style="width:18px;height:18px;margin:0 auto"></div>';
+
+        try {
+          const data = await apiFetch('/api/payments/checkout', {
+            method: 'POST',
+            body: JSON.stringify({ plan, service_area_id: serviceAreaId }),
+          });
+          if (data.checkout_url) {
+            window.location.href = data.checkout_url;
+          }
+        } catch (err) {
+          alert(err.message || 'Erreur lors de la cr\u00e9ation du paiement');
+          document.querySelectorAll('.checkout-btn').forEach(b => {
+            b.disabled = false;
+            const p = b.dataset.plan;
+            b.textContent = `Souscrire \u2014 ${PLAN_DETAILS[p].price}\u20AC/mois`;
+          });
+        }
+      });
+    });
+
   } catch (err) {
     console.error('Payments load error:', err);
     document.getElementById('pay-loading').innerHTML = '<p class="text-red-600 text-sm">Erreur de chargement</p>';

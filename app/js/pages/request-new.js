@@ -88,17 +88,44 @@ async function bind(params) {
   bindLayoutEvents();
   preselectedProperty = params?.property || '';
 
-  // Load properties for select
+  let allProps = [];
+  let activeSubs = [];
+
+  // Load properties and subscriptions in parallel
   try {
-    const data = await apiFetch('/api/properties');
-    const props = data.properties || [];
+    const [propsData, subsData] = await Promise.all([
+      apiFetch('/api/properties'),
+      apiFetch('/api/payments/subscriptions'),
+    ]);
+    allProps = propsData.properties || [];
+    activeSubs = (subsData.subscriptions || []).filter(s => s.status === 'active');
     const select = document.getElementById('req-property');
-    select.innerHTML = props.length === 0
-      ? '<option value="">Aucun bien enregistré</option>'
-      : props.map(p => `<option value="${p.id}" ${p.id === preselectedProperty ? 'selected' : ''}>${p.name} — ${p.city || ''}</option>`).join('');
+    select.innerHTML = allProps.length === 0
+      ? '<option value="">Aucun bien enregistr\u00e9</option>'
+      : allProps.map(p => `<option value="${p.id}" ${p.id === preselectedProperty ? 'selected' : ''}>${p.name} \u2014 ${p.city || ''}</option>`).join('');
   } catch (err) {
     document.getElementById('req-property').innerHTML = '<option value="">Erreur de chargement</option>';
   }
+
+  // Show subscription info when property changes
+  function checkSubForProperty() {
+    const propId = document.getElementById('req-property').value;
+    const prop = allProps.find(p => p.id === propId);
+    let existing = document.getElementById('sub-info');
+    if (existing) existing.remove();
+    if (!prop) return;
+    const hasSub = activeSubs.some(s => s.service_area_id === prop.service_area_id);
+    if (!hasSub) {
+      const city = prop.service_area_city || prop.city || '';
+      const info = document.createElement('div');
+      info.id = 'sub-info';
+      info.className = 'bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 mt-2 text-sm text-amber-800';
+      info.innerHTML = `Vous n\u2019avez pas d\u2019abonnement pour ${city}. Cette demande sera factur\u00e9e \u00e0 l\u2019intervention. <a href="#/payments" class="text-brand-gold font-medium hover:underline">Souscrire un abonnement</a>`;
+      document.getElementById('req-property').parentNode.appendChild(info);
+    }
+  }
+  document.getElementById('req-property').addEventListener('change', checkSubForProperty);
+  checkSubForProperty();
 
   // Auto-fill title based on type
   document.getElementById('req-type').addEventListener('change', (e) => {

@@ -62,18 +62,30 @@ async function bind(params) {
         <p class="text-xs text-gray-500">${new Date(r.created_at).toLocaleDateString('fr-FR')}</p>
       </a>`).join('') : '<p class="text-sm text-gray-400 text-center py-4">Aucune demande pour ce bien</p>';
 
+    const cityName = p.service_area_city || p.city || '';
+    const subBanner = sub
+      ? `<div class="bg-green-50 border border-green-200 rounded-lg px-4 py-3 mb-6 flex items-center gap-2">
+          <span class="w-2 h-2 bg-green-500 rounded-full"></span>
+          <span class="text-sm text-green-700 font-medium">Abonnement ${(sub.plan || '').charAt(0).toUpperCase() + (sub.plan || '').slice(1)} actif</span>
+        </div>`
+      : `<div class="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 mb-6 flex items-center justify-between gap-3 flex-wrap">
+          <p class="text-sm text-amber-800">Aucun abonnement actif pour ${cityName}. Souscrivez pour planifier des visites r\u00e9guli\u00e8res.</p>
+          <a href="#/payments" class="text-sm bg-brand-gold text-white px-4 py-2 rounded-lg font-medium hover:bg-amber-700 transition whitespace-nowrap">Souscrire pour ${cityName}</a>
+        </div>`;
+
     document.getElementById('detail-content').innerHTML = `
       <!-- Property Header -->
       <div class="flex items-start justify-between mb-6">
         <div>
           <h1 class="text-2xl font-serif font-bold text-brand-navy">${p.name}</h1>
-          <p class="text-gray-500 text-sm mt-1">${flag} ${p.service_area_city || p.city || ''} ${p.address_text ? '\u00b7 ' + p.address_text : ''}</p>
+          <p class="text-gray-500 text-sm mt-1">${flag} ${cityName} ${p.address_text ? '\u00b7 ' + p.address_text : ''}</p>
         </div>
         <span class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full ${p.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}">
           <span class="w-2 h-2 rounded-full ${p.status === 'active' ? 'bg-green-500' : 'bg-gray-400'}"></span>
           ${p.status === 'active' ? 'Actif' : p.status || 'Actif'}
         </span>
       </div>
+      ${subBanner}
 
       <!-- Info Grid -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
