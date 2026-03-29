@@ -8,6 +8,15 @@ const COUNTRY_FLAGS = { MA: '\u{1F1F2}\u{1F1E6}', DZ: '\u{1F1E9}\u{1F1FF}', TN: 
 const INVOICE_STATUS = { pending: 'En attente', paid: 'Pay\u00e9e', failed: '\u00c9chou\u00e9e', refunded: 'Rembours\u00e9e' };
 const INVOICE_COLORS = { pending: 'bg-yellow-100 text-yellow-800', paid: 'bg-green-100 text-green-800', failed: 'bg-red-100 text-red-800', refunded: 'bg-gray-100 text-gray-800' };
 
+const ONE_OFF_SERVICES = [
+  { id: 'visit', name: 'Visite de contr\u00f4le', desc: 'Inspection + rapport photo', price: 3500 },
+  { id: 'cleaning_apartment', name: 'M\u00e9nage Appartement', desc: 'Nettoyage complet', price: 5500 },
+  { id: 'cleaning_villa', name: 'M\u00e9nage Villa', desc: 'Nettoyage complet', price: 7500 },
+  { id: 'groceries', name: 'Courses de base', desc: 'Approvisionnement', price: 2500 },
+  { id: 'meter_reading', name: 'Relev\u00e9 compteurs', desc: 'Eau, \u00e9lectricit\u00e9, gaz', price: 2000 },
+  { id: 'arrival_pack', name: 'Pack Arriv\u00e9e', desc: 'M\u00e9nage + courses + check-in', price: 8900 },
+];
+
 const PLAN_DETAILS = {
   veille: {
     name: 'Veille', price: 45, color: 'border-gray-200',
@@ -148,6 +157,45 @@ async function bind() {
       </div>`;
     }
 
+    // --- One-off services section ---
+    const propOptions = properties.map(p => `<option value="${p.id}">${p.name} \u2014 ${p.service_area_city || p.city || ''}</option>`).join('');
+
+    const oneOffHtml = `
+      <div class="bg-white rounded-xl border border-gray-200 p-6">
+        <h2 class="text-lg font-bold text-brand-navy mb-1">Interventions \u00e0 la carte</h2>
+        <p class="text-sm text-gray-500 mb-5">Pas besoin d\u2019abonnement. Commandez une intervention quand vous en avez besoin.</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="oneoff-cards">
+          ${ONE_OFF_SERVICES.map(s => `
+          <div class="border border-gray-200 rounded-xl p-5 flex flex-col">
+            <h3 class="font-bold text-brand-navy mb-1">${s.name}</h3>
+            <p class="text-xs text-gray-500 mb-3">${s.desc}</p>
+            <p class="text-2xl font-bold text-brand-navy mb-4">${(s.price / 100).toFixed(0)}\u20AC</p>
+            <button class="oneoff-btn mt-auto w-full bg-brand-gold text-white py-2 rounded-lg text-sm font-semibold hover:bg-amber-700 transition" data-service="${s.id}" data-price="${s.price}" data-name="${s.name}">Commander</button>
+          </div>`).join('')}
+        </div>
+
+        <!-- One-off order form (hidden by default) -->
+        <div id="oneoff-form" class="hidden mt-6 border-t border-gray-200 pt-5">
+          <h3 class="text-sm font-bold text-brand-navy mb-3" id="oneoff-form-title"></h3>
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5">Bien concern\u00e9</label>
+              <select id="oneoff-property" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm bg-white">
+                ${properties.length > 0 ? '<option value="">S\u00e9lectionnez un bien</option>' + propOptions : '<option value="">Aucun bien enregistr\u00e9</option>'}
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5">Pr\u00e9cisions <span class="text-gray-400">(optionnel)</span></label>
+              <input type="text" id="oneoff-notes" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm" placeholder="Instructions particuli\u00e8res...">
+            </div>
+            <div class="flex gap-3">
+              <button id="oneoff-pay" class="bg-brand-gold text-white px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-amber-700 transition"></button>
+              <button id="oneoff-cancel" class="text-sm text-gray-500 hover:text-gray-700 transition">Annuler</button>
+            </div>
+          </div>
+        </div>
+      </div>`;
+
     // --- Invoices section ---
     const invoicesHtml = invoices.length > 0 ? `
       <div class="bg-white rounded-xl border border-gray-200 p-6">
@@ -186,7 +234,7 @@ async function bind() {
         <p class="text-sm text-gray-400">Aucune facture</p>
       </div>`;
 
-    document.getElementById('pay-content').innerHTML = subHtml + subscribeCta + invoicesHtml;
+    document.getElementById('pay-content').innerHTML = subHtml + subscribeCta + oneOffHtml + invoicesHtml;
     document.getElementById('pay-loading').classList.add('hidden');
     document.getElementById('pay-content').classList.remove('hidden');
 
@@ -225,6 +273,58 @@ async function bind() {
           });
         }
       });
+    });
+
+    // --- One-off click handlers ---
+    let selectedService = null;
+    const oneoffForm = document.getElementById('oneoff-form');
+    const oneoffTitle = document.getElementById('oneoff-form-title');
+    const oneoffPayBtn = document.getElementById('oneoff-pay');
+
+    document.querySelectorAll('.oneoff-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const svc = ONE_OFF_SERVICES.find(s => s.id === btn.dataset.service);
+        if (!svc) return;
+        selectedService = svc;
+        oneoffTitle.textContent = svc.name;
+        oneoffPayBtn.textContent = `Payer \u2014 ${(svc.price / 100).toFixed(0)}\u20AC`;
+        oneoffForm.classList.remove('hidden');
+        oneoffForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+    });
+
+    document.getElementById('oneoff-cancel')?.addEventListener('click', () => {
+      oneoffForm.classList.add('hidden');
+      selectedService = null;
+    });
+
+    oneoffPayBtn?.addEventListener('click', async () => {
+      if (!selectedService) return;
+      const propertyId = document.getElementById('oneoff-property').value;
+      if (!propertyId) {
+        document.getElementById('oneoff-property').focus();
+        document.getElementById('oneoff-property').classList.add('border-red-400');
+        return;
+      }
+      document.getElementById('oneoff-property').classList.remove('border-red-400');
+
+      oneoffPayBtn.disabled = true;
+      oneoffPayBtn.innerHTML = '<div class="spinner" style="width:18px;height:18px;margin:0 auto"></div>';
+
+      const notes = document.getElementById('oneoff-notes').value.trim();
+      const desc = notes ? `${selectedService.name} \u2014 ${notes}` : selectedService.name;
+
+      try {
+        const data = await apiFetch('/api/payments/one-off', {
+          method: 'POST',
+          body: JSON.stringify({ amount: selectedService.price, description: desc, property_id: propertyId }),
+        });
+        if (data.checkout_url) window.location.href = data.checkout_url;
+      } catch (err) {
+        alert(err.message || 'Erreur lors de la cr\u00e9ation du paiement');
+        oneoffPayBtn.disabled = false;
+        oneoffPayBtn.textContent = `Payer \u2014 ${(selectedService.price / 100).toFixed(0)}\u20AC`;
+      }
     });
 
   } catch (err) {
