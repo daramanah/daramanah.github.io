@@ -1,0 +1,20 @@
+/* DarAmanah Super Admin SPA — reuses the brand palette with a gold accent to
+   distinguish from the antenne SPA (which uses indigo). */
+
+.spinner {
+  width: 32px; height: 32px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #b45309;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.page-enter { animation: fade-up 200ms ease-out; }
+@keyframes fade-up { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+.card-hover { transition: box-shadow 160ms ease, transform 160ms ease; }
+.card-hover:hover { box-shadow: 0 6px 20px rgba(0,0,0,0.06); transform: translateY(-1px); }
+
+.sidebar-link.active { background: #fef3c7; color: #b45309; font-weight: 600; }
+.bottom-nav-item.active { color: #b45309; }
