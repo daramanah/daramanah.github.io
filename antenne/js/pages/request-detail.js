@@ -1,5 +1,5 @@
 import { apiFetch } from '../api.js';
-import { getCachedBranch } from '../auth.js';
+import { getCachedBranch, getCachedUser } from '../auth.js';
 import { renderLayout, bindLayoutEvents } from '../components/layout.js';
 
 const STATUS_LABELS = { pending: 'En attente', assigned: 'Assignée', in_progress: 'En cours', completed: 'Terminée', validated: 'Validée', invoiced: 'Facturée', cancelled: 'Annulée' };
@@ -45,8 +45,17 @@ async function bind(params) {
     const r = reqData.request;
     const reports = reqData.reports || [];
     const team = teamData.team || [];
+    const user = getCachedUser();
+    const currentUserId = user?.id;
+
+    const isFree = !r.claimed_by && r.status === 'pending';
+    const isClaimedByMe = r.claimed_by === currentUserId;
+    const isClaimedByOther = r.claimed_by && r.claimed_by !== currentUserId;
+    const releasePending = !!r.release_requested;
 
     const teamOptions = team.map(t => `<option value="${t.id}" ${r.assigned_to === t.id ? 'selected' : ''}>${t.first_name} ${t.last_name}</option>`).join('');
+
+    const claimedByLine = r.claimed_by ? `<div class="flex justify-between"><span class="text-gray-500">Pris en charge par</span><span class="font-medium">${r.claimed_by_first_name || ''} ${r.claimed_by_last_name || ''}${isClaimedByMe ? ' (vous)' : ''}</span></div>` : '';
 
     const reportsHtml = reports.length > 0 ? reports.map(rep => `
       <div class="border border-gray-200 rounded-lg p-4">
@@ -85,29 +94,62 @@ async function bind(params) {
               <div class="flex justify-between"><span class="text-gray-500">Priorité</span><span class="font-medium ${r.priority === 'urgent' ? 'text-red-600' : ''}">${r.priority === 'urgent' ? 'Urgent' : 'Normal'}</span></div>
               <div class="flex justify-between"><span class="text-gray-500">Créée le</span><span class="font-medium">${new Date(r.created_at).toLocaleDateString('fr-FR')}</span></div>
               ${r.agent_first_name ? `<div class="flex justify-between"><span class="text-gray-500">Agent</span><span class="font-medium">${r.agent_first_name} ${r.agent_last_name || ''}</span></div>` : ''}
+              ${claimedByLine}
             </div>
             ${r.description ? `<div class="mt-3 pt-3 border-t border-gray-100"><p class="text-sm text-gray-600">${r.description}</p></div>` : ''}
           </div>
 
-          <!-- Actions -->
-          ${r.status === 'pending' ? `
+          <!-- Pool + Claim actions -->
+          ${isFree ? `
+          <div class="bg-white rounded-xl border border-indigo-200 p-5">
+            <h2 class="text-sm font-bold text-brand-navy mb-3">Demande libre</h2>
+            <p class="text-sm text-gray-600 mb-3">Cette demande est dans le pool. Prenez-la en charge pour pouvoir dispatcher un intervenant.</p>
+            <button id="claim-btn" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition">Prendre en charge</button>
+          </div>` : ''}
+
+          ${isClaimedByMe ? `
           <div class="bg-white rounded-xl border border-gray-200 p-5">
-            <h2 class="text-sm font-bold text-brand-navy mb-3">Assigner un intervenant</h2>
+            <h2 class="text-sm font-bold text-brand-navy mb-3">Dispatcher un intervenant</h2>
             <div class="flex gap-3">
               <select id="assign-agent" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm">
                 <option value="">Choisir un intervenant</option>
                 ${teamOptions}
               </select>
-              <button id="assign-btn" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition">Assigner</button>
+              <button id="assign-btn" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition">${r.assigned_to ? 'Changer' : 'Dispatcher'}</button>
+            </div>
+            <div class="mt-4 pt-4 border-t border-gray-100">
+              ${releasePending
+                ? `<p class="text-sm text-orange-600 font-medium">📤 Release demandé, en attente d'arbitrage super_admin.</p>`
+                : `<button id="release-btn" class="text-sm text-orange-600 hover:text-orange-700 font-medium">Demander à rendre cette demande</button>`}
             </div>
           </div>` : ''}
 
-          ${r.status === 'completed' ? `
+          ${isClaimedByOther ? `
+          <div class="bg-white rounded-xl border border-gray-200 p-5 opacity-80">
+            <h2 class="text-sm font-bold text-brand-navy mb-2">Prise par un autre admin</h2>
+            <p class="text-sm text-gray-600">Cette demande est pilotée par <strong>${r.claimed_by_first_name || ''} ${r.claimed_by_last_name || ''}</strong>. Vous ne pouvez que consulter.</p>
+            ${releasePending ? `<p class="text-sm text-orange-600 mt-2 font-medium">📤 Release demandé, en attente d'arbitrage super_admin.</p>` : ''}
+          </div>` : ''}
+
+          ${isClaimedByMe && r.status === 'completed' ? `
           <div class="bg-white rounded-xl border border-amber-200 p-5">
             <h2 class="text-sm font-bold text-brand-navy mb-3">Validation du rapport</h2>
             <p class="text-sm text-gray-600 mb-3">L'intervenant a terminé sa mission. Validez le rapport pour clôturer.</p>
             <button id="validate-btn" class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition">Valider le rapport</button>
           </div>` : ''}
+
+          <!-- Release reason modal -->
+          <div id="release-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-xl p-5 max-w-md w-full">
+              <h3 class="text-base font-bold text-brand-navy mb-2">Demander à rendre cette demande</h3>
+              <p class="text-sm text-gray-600 mb-3">Indiquez la raison à l'attention du super_admin (minimum 10 caractères).</p>
+              <textarea id="release-reason" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="Ex: conflit d'intérêt avec le client, charge trop élevée, indisponibilité prolongée…"></textarea>
+              <div class="flex justify-end gap-2 mt-3">
+                <button id="release-cancel" class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Annuler</button>
+                <button id="release-submit" class="bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-orange-700 transition">Envoyer la demande</button>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Timeline -->
@@ -146,6 +188,49 @@ async function bind(params) {
         await apiFetch(`/api/admin/requests/${requestId}/validate`, { method: 'PUT' });
         window.location.hash = '#/requests';
       } catch (err) { alert(err.message || 'Erreur'); }
+    });
+
+    // Claim action (from detail page — alt path to the tab button)
+    document.getElementById('claim-btn')?.addEventListener('click', async () => {
+      const btn = document.getElementById('claim-btn');
+      btn.disabled = true; btn.textContent = 'Prise en charge…';
+      try {
+        await apiFetch(`/api/admin/requests/${requestId}/claim`, { method: 'POST' });
+        window.location.reload();
+      } catch (err) {
+        btn.disabled = false; btn.textContent = 'Prendre en charge';
+        alert(err.message || 'Erreur lors du claim');
+      }
+    });
+
+    // Release modal open / cancel / submit
+    const releaseModal = document.getElementById('release-modal');
+    document.getElementById('release-btn')?.addEventListener('click', () => {
+      releaseModal?.classList.remove('hidden');
+    });
+    document.getElementById('release-cancel')?.addEventListener('click', () => {
+      releaseModal?.classList.add('hidden');
+      const ta = document.getElementById('release-reason'); if (ta) ta.value = '';
+    });
+    document.getElementById('release-submit')?.addEventListener('click', async () => {
+      const reason = (document.getElementById('release-reason')?.value || '').trim();
+      if (reason.length < 10) {
+        alert('La raison doit contenir au moins 10 caractères.');
+        return;
+      }
+      const submitBtn = document.getElementById('release-submit');
+      submitBtn.disabled = true; submitBtn.textContent = 'Envoi…';
+      try {
+        await apiFetch(`/api/admin/requests/${requestId}/request-release`, {
+          method: 'POST',
+          body: JSON.stringify({ reason }),
+        });
+        releaseModal?.classList.add('hidden');
+        window.location.reload();
+      } catch (err) {
+        submitBtn.disabled = false; submitBtn.textContent = 'Envoyer la demande';
+        alert(err.message || 'Erreur');
+      }
     });
   } catch (err) {
     console.error(err);
