@@ -26,9 +26,11 @@ export function renderReportPhotos(photos) {
   const momentLabel = { before: 'avant', after: 'après' };
   const cells = photos.map(p => {
     const label = `${escapeHtml(p.room || '')}${p.moment ? ' · ' + (momentLabel[p.moment] || escapeHtml(p.moment)) : ''}`;
+    const caption = p.caption ? `<div class="px-2 pb-1.5 text-xs text-gray-400 italic">${escapeHtml(p.caption)}</div>` : '';
     return `<div class="rounded-lg overflow-hidden bg-gray-100">
       <div class="aspect-video overflow-hidden"><img src="${escapeHtml(p.url)}" alt="${label}" class="w-full h-full object-cover" loading="lazy"></div>
-      <div class="px-2 py-1 text-xs text-gray-500">${label}</div>
+      <div class="px-2 pt-1 text-xs text-gray-500">${label}</div>
+      ${caption}
     </div>`;
   }).join('');
   return `<div>
