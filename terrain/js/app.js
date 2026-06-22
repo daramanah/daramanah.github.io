@@ -6,7 +6,10 @@ const staticRoutes = {
   '/missions': () => import('./pages/missions.js'),
 };
 
-const dynamicRoutes = []; // Phase 4 : /missions/:id, /missions/:id/report
+const dynamicRoutes = [
+  { pattern: /^\/missions\/([a-f0-9]+)\/report$/, loader: () => import('./pages/mission-report.js'), paramName: 'id' },
+  { pattern: /^\/missions\/([a-f0-9]+)$/, loader: () => import('./pages/mission-detail.js'), paramName: 'id' },
+];
 
 const appRoot = document.getElementById('app');
 
