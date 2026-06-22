@@ -1,6 +1,7 @@
 import { apiFetch } from '../api.js';
 import { getCachedBranch, getCachedUser } from '../auth.js';
 import { renderLayout, bindLayoutEvents } from '../components/layout.js';
+import { escapeHtml, renderChecklist, renderReportPhotos } from '../utils.js';
 
 const STATUS_LABELS = { pending: 'En attente', assigned: 'Assignée', in_progress: 'En cours', completed: 'Terminée', validated: 'Validée', invoiced: 'Facturée', cancelled: 'Annulée' };
 const STATUS_COLORS = { pending: 'bg-yellow-100 text-yellow-800', assigned: 'bg-blue-100 text-blue-800', in_progress: 'bg-indigo-100 text-indigo-800', completed: 'bg-green-100 text-green-800', validated: 'bg-emerald-100 text-emerald-800', invoiced: 'bg-gray-100 text-gray-800', cancelled: 'bg-red-100 text-red-800' };
@@ -60,18 +61,12 @@ async function bind(params) {
     const reportsHtml = reports.length > 0 ? reports.map(rep => `
       <div class="border border-gray-200 rounded-lg p-4">
         <div class="flex justify-between mb-2">
-          <span class="text-sm font-semibold">${rep.agent_first_name || 'Agent'} ${rep.agent_last_name || ''}</span>
+          <span class="text-sm font-semibold">${escapeHtml(rep.agent_first_name || 'Agent')} ${escapeHtml(rep.agent_last_name || '')}</span>
           <span class="text-xs text-gray-400">${new Date(rep.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
         </div>
-        ${rep.notes ? `<p class="text-sm text-gray-600 mb-3">${rep.notes}</p>` : ''}
-        ${rep.checklist ? `<div class="mb-3"><p class="text-xs font-semibold text-gray-500 mb-1">Checklist :</p><p class="text-sm text-gray-600">${rep.checklist}</p></div>` : ''}
-        ${rep.media_keys ? `
-          <div>
-            <p class="text-xs font-semibold text-gray-500 mb-2">Photos :</p>
-            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              ${rep.media_keys.split(',').map(k => `<div class="aspect-video bg-gray-100 rounded-lg overflow-hidden"><img src="${k.trim()}" alt="Photo rapport" class="w-full h-full object-cover" loading="lazy"></div>`).join('')}
-            </div>
-          </div>` : ''}
+        ${rep.observations ? `<p class="text-sm text-gray-600 mb-3">${escapeHtml(rep.observations)}</p>` : ''}
+        ${rep.checklist ? `<div class="mb-3"><p class="text-xs font-semibold text-gray-500 mb-1">Checklist :</p>${renderChecklist(rep.checklist)}</div>` : ''}
+        ${renderReportPhotos(rep.photos)}
       </div>`).join('') : '<p class="text-sm text-gray-400 text-center py-3">Aucun rapport</p>';
 
     document.getElementById('rd-content').innerHTML = `
