@@ -2,11 +2,12 @@
 import { isAuthenticated } from './auth.js';
 
 const staticRoutes = {
-  '/login':     () => import('./pages/login.js'),
-  '/dashboard': () => import('./pages/dashboard.js'),
-  '/requests':  () => import('./pages/requests.js'),
-  '/releases':  () => import('./pages/releases.js'),
-  '/stale':     () => import('./pages/requests.js'),
+  '/login':        () => import('./pages/login.js'),
+  '/dashboard':    () => import('./pages/dashboard.js'),
+  '/organisation': () => import('./pages/organisation.js'),
+  '/requests':     () => import('./pages/requests.js'),
+  '/releases':     () => import('./pages/releases.js'),
+  '/stale':        () => import('./pages/requests.js'),
 };
 
 const dynamicRoutes = [
