@@ -6,6 +6,17 @@ const TYPE_LABELS = { visit: 'Visite', cleaning: 'Ménage', repair: 'Réparation
 const STATUS_LABELS = { assigned: 'À faire', in_progress: 'En cours', completed: 'Terminée', validated: 'Validée' };
 const STATUS_COLORS = { assigned: 'bg-blue-100 text-blue-800', in_progress: 'bg-teal-100 text-teal-800', completed: 'bg-green-100 text-green-800', validated: 'bg-emerald-100 text-emerald-800' };
 
+function sinceStarted(startedAt) {
+  if (!startedAt) return '';
+  const diffMin = Math.round((Date.now() - Date.parse(startedAt)) / 60000);
+  if (diffMin < 1) return 'Démarrée à l\'instant';
+  if (diffMin < 60) return `Démarrée il y a ${diffMin} min`;
+  const h = Math.floor(diffMin / 60);
+  if (h < 24) return `Démarrée il y a ${h} h`;
+  const j = Math.floor(h / 24);
+  return `Démarrée il y a ${j} j`;
+}
+
 function getPositionSilently(timeoutMs = 5000) {
   return new Promise(resolve => {
     if (!navigator.geolocation) return resolve({});
@@ -98,10 +109,11 @@ async function bind(params) {
         ${phone ? `<a href="tel:${escapeHtml(phone)}" class="text-sm text-teal-700 hover:underline mt-1 inline-flex items-center gap-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>${escapeHtml(phone)}</a>` : ''}
       </div>` : ''}
 
-      ${date ? `
+      ${date || (mission.status === 'in_progress' && mission.started_at) ? `
       <div class="bg-white rounded-xl border border-gray-200 p-5 mb-4">
-        <h2 class="text-sm font-bold text-brand-navy mb-1">Date prévue</h2>
-        <p class="text-sm text-gray-700">${date}</p>
+        <h2 class="text-sm font-bold text-brand-navy mb-1">Planification</h2>
+        ${date ? `<p class="text-sm text-gray-700">Prévue le ${date}</p>` : ''}
+        ${mission.status === 'in_progress' && mission.started_at ? `<p class="text-sm text-teal-700 ${date ? 'mt-1' : ''}">${escapeHtml(sinceStarted(mission.started_at))}</p>` : ''}
       </div>` : ''}
 
       ${mission.description ? `
