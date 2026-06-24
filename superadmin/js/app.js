@@ -5,6 +5,7 @@ const staticRoutes = {
   '/login':        () => import('./pages/login.js'),
   '/dashboard':    () => import('./pages/dashboard.js'),
   '/organisation': () => import('./pages/organisation.js'),
+  '/admins':       () => import('./pages/admins.js'),
   '/requests':     () => import('./pages/requests.js'),
   '/releases':     () => import('./pages/releases.js'),
   '/stale':        () => import('./pages/requests.js'),
