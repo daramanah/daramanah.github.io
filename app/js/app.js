@@ -6,6 +6,8 @@ import { isAuthenticated } from './auth.js';
 const staticRoutes = {
   '/login': () => import('./pages/login.js'),
   '/register': () => import('./pages/register.js'),
+  '/forgot-password': () => import('./pages/forgot-password.js'),
+  '/reset-password': () => import('./pages/reset-password.js'),
   '/dashboard': () => import('./pages/dashboard.js'),
   '/properties': () => import('./pages/properties.js'),
   '/properties/new': () => import('./pages/property-new.js'),
@@ -23,7 +25,7 @@ const dynamicRoutes = [
   { pattern: /^\/properties\/([a-f0-9]+)$/, loader: () => import('./pages/property-detail.js'), paramName: 'id' },
 ];
 
-const publicRoutes = ['/login', '/register'];
+const publicRoutes = ['/login', '/register', '/forgot-password', '/reset-password'];
 
 const appRoot = document.getElementById('app');
 

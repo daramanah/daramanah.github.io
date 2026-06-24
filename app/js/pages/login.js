@@ -32,6 +32,9 @@ function render() {
           </button>
         </form>
         <p class="text-center text-sm text-gray-500 mt-6">
+          <a href="#/forgot-password" class="text-brand-gold font-medium hover:underline">Mot de passe oublié ?</a>
+        </p>
+        <p class="text-center text-sm text-gray-500 mt-3">
           Pas encore de compte ? <a href="#/register" class="text-brand-gold font-medium hover:underline">Créer un compte</a>
         </p>
       </div>

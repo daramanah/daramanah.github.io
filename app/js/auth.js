@@ -22,6 +22,21 @@ async function register(fields) {
   return data.user;
 }
 
+async function forgotPassword(email) {
+  return apiFetch('/api/auth/forgot-password', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  });
+}
+
+async function resetPassword(token, newPassword) {
+  // camelCase newPassword (conforme au backend, divergence isolee).
+  return apiFetch('/api/auth/reset-password', {
+    method: 'POST',
+    body: JSON.stringify({ token, newPassword }),
+  });
+}
+
 function logout() {
   const { access } = getTokens();
   if (access) {
@@ -59,4 +74,4 @@ async function updateProfile(fields) {
   return data.user;
 }
 
-export { login, register, logout, isAuthenticated, getCachedUser, fetchUser, updateProfile };
+export { login, register, forgotPassword, resetPassword, logout, isAuthenticated, getCachedUser, fetchUser, updateProfile };
