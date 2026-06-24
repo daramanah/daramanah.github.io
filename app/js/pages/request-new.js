@@ -3,24 +3,11 @@
 import { apiFetch } from '../api.js';
 import { renderLayout, bindLayoutEvents } from '../components/layout.js';
 
-const TYPES = [
-  { value: 'visit', label: 'Visite de contrôle' },
-  { value: 'cleaning_apartment', label: 'Ménage Appartement' },
-  { value: 'cleaning_villa', label: 'Ménage Villa' },
-  { value: 'groceries', label: 'Courses de base' },
-  { value: 'meter_reading', label: 'Relevé compteurs' },
-  { value: 'arrival_pack', label: 'Pack Arrivée' },
-  { value: 'other', label: 'Autre' },
-];
-
 let preselectedProperty = null;
+let eligibleServices = []; // populated by bind() from GET /api/catalog
 
 function render(params) {
   preselectedProperty = params?.property || '';
-
-  const typeOptions = TYPES.map(t =>
-    `<option value="${t.value}">${t.label}</option>`
-  ).join('');
 
   const content = `
     <div class="mb-6">
@@ -46,7 +33,7 @@ function render(params) {
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1.5">Type d'intervention</label>
           <select id="req-type" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm bg-white">
-            ${typeOptions}
+            <option value="">Chargement...</option>
           </select>
         </div>
 
@@ -91,20 +78,29 @@ async function bind(params) {
   let allProps = [];
   let activeSubs = [];
 
-  // Load properties and subscriptions in parallel
+  // Load properties, subscriptions and service catalog in parallel
   try {
-    const [propsData, subsData] = await Promise.all([
+    const [propsData, subsData, catalogData] = await Promise.all([
       apiFetch('/api/properties'),
       apiFetch('/api/payments/subscriptions'),
+      apiFetch('/api/catalog'),
     ]);
     allProps = propsData.properties || [];
     activeSubs = (subsData.subscriptions || []).filter(s => s.status === 'active');
-    const select = document.getElementById('req-property');
-    select.innerHTML = allProps.length === 0
+    eligibleServices = (catalogData.services || []).filter(s => s.category !== 'oneoff_only');
+
+    const propSelect = document.getElementById('req-property');
+    propSelect.innerHTML = allProps.length === 0
       ? '<option value="">Aucun bien enregistr\u00e9</option>'
       : allProps.map(p => `<option value="${p.id}" ${p.id === preselectedProperty ? 'selected' : ''}>${p.name} \u2014 ${p.city || ''}</option>`).join('');
+
+    const typeSelect = document.getElementById('req-type');
+    typeSelect.innerHTML = eligibleServices.map(s =>
+      `<option value="${s.code}">${s.label}</option>`
+    ).join('') + '<option value="other">Autre demande</option>';
   } catch (err) {
     document.getElementById('req-property').innerHTML = '<option value="">Erreur de chargement</option>';
+    document.getElementById('req-type').innerHTML = '<option value="">Erreur de chargement</option>';
   }
 
   // Show subscription info when property changes
@@ -128,17 +124,21 @@ async function bind(params) {
   checkSubForProperty();
 
   // Auto-fill title based on type
+  function labelForValue(value) {
+    if (value === 'other') return 'Autre demande';
+    return eligibleServices.find(s => s.code === value)?.label || '';
+  }
   document.getElementById('req-type').addEventListener('change', (e) => {
     const titleInput = document.getElementById('req-title');
-    if (!titleInput.value || TYPES.some(t => t.label === titleInput.value)) {
-      const selected = TYPES.find(t => t.value === e.target.value);
-      if (selected) titleInput.value = selected.label;
+    const knownLabels = [...eligibleServices.map(s => s.label), 'Autre demande'];
+    if (!titleInput.value || knownLabels.includes(titleInput.value)) {
+      titleInput.value = labelForValue(e.target.value);
     }
   });
   // Set initial title
-  const initialType = TYPES.find(t => t.value === document.getElementById('req-type').value);
-  if (initialType && !document.getElementById('req-title').value) {
-    document.getElementById('req-title').value = initialType.label;
+  const initialLabel = labelForValue(document.getElementById('req-type').value);
+  if (initialLabel && !document.getElementById('req-title').value) {
+    document.getElementById('req-title').value = initialLabel;
   }
 
   // Form submit
@@ -152,13 +152,18 @@ async function bind(params) {
     btn.disabled = true;
     btn.innerHTML = '<div class="spinner"></div>';
 
+    const selectedTypeValue = document.getElementById('req-type').value;
     const body = {
       property_id: document.getElementById('req-property').value,
-      type: document.getElementById('req-type').value,
       title: document.getElementById('req-title').value.trim(),
       description: document.getElementById('req-desc').value.trim() || null,
       priority: document.querySelector('input[name="priority"]:checked').value,
     };
+    if (selectedTypeValue === 'other') {
+      body.type = 'other'; // chemin legacy : pas de service_code
+    } else {
+      body.service_code = selectedTypeValue; // nouveau chemin
+    }
 
     if (!body.property_id) {
       errorEl.textContent = 'Veuillez sélectionner un bien';
