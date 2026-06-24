@@ -17,6 +17,7 @@ const SPECIALTY_ORDER = ['visit', 'cleaning', 'groceries', 'meter_reading', 'rep
 let allAgents = [];
 let allBranches = [];
 let pendingForcePromote = null;
+let currentManageAgentId = null;
 
 function escapeHtml(s) {
   if (s == null) return '';
@@ -37,6 +38,7 @@ function friendlyErr(err) {
     case 'ALREADY_MEMBER':             return 'Cet agent est déjà affecté à cette antenne.';
     case 'BRANCH_NOT_FOUND':           return "L'antenne sélectionnée n'existe plus.";
     case 'BRANCH_WRONG_COUNTRY':       return "Vous ne pouvez créer un agent que dans votre pays.";
+    case 'CANNOT_DELETE_HAS_HISTORY':  return "Cet agent a un historique de rapports sur cette antenne — il ne peut pas en être retiré directement. Désactivez-le plutôt (depuis la PWA terrain, ou un futur écran édition).";
     case 'INVALID_BODY':               return 'Données invalides.';
     default:                           return err.message || 'Erreur';
   }
@@ -101,6 +103,9 @@ function renderAgentCard(a) {
       <p class="text-[10px] text-gray-400 uppercase tracking-wide mb-1">Affectation</p>
       <div class="flex flex-wrap">${affectationBlock}</div>
     </div>
+    <div class="mt-3 flex gap-2">
+      <button data-manage="${a.id}" class="agt-manage-btn text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50">Gérer les antennes</button>
+    </div>
   </div>`;
 }
 
@@ -126,6 +131,12 @@ function renderCountryBlock(country, agents) {
     <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">${escapeHtml(COUNTRY_LABELS[country] || country)}</h2>
     <div class="space-y-4">${sections.join('')}</div>
   </section>`;
+}
+
+function attachCardListeners() {
+  document.querySelectorAll('.agt-manage-btn').forEach(btn => {
+    btn.addEventListener('click', () => openManageBranchesModal(btn.dataset.manage));
+  });
 }
 
 function groupAndRender() {
@@ -154,6 +165,7 @@ function groupAndRender() {
   }
   listEl.innerHTML = blocks.join('');
   listEl.classList.remove('hidden');
+  attachCardListeners();
 }
 
 async function loadAll() {
@@ -166,7 +178,6 @@ async function loadAll() {
       apiFetch('/api/admin/branches'),
     ]);
     allAgents = agentsData.agents || [];
-    // allBranches : utilise pour le select antenne (vraies antennes uniquement, sans pools).
     allBranches = (branchesData.branches || []).filter(b => !b.id.startsWith('branch_pool_'));
     groupAndRender();
   } catch (err) {
@@ -300,6 +311,171 @@ async function clickForcePromote() {
   document.getElementById('agt-create-force-zone').classList.add('hidden');
 }
 
+// --- Manage branches modal ---
+
+function openManageBranchesModal(agentId) {
+  const agent = allAgents.find(a => a.id === agentId);
+  if (!agent) return;
+  currentManageAgentId = agentId;
+  document.getElementById('agt-manage-title').textContent = `Gérer les antennes — ${agent.first_name} ${agent.last_name}`;
+  const country = agentCountry(agent);
+  document.getElementById('agt-manage-country-info').textContent = country
+    ? `Pays de l'agent : ${COUNTRY_LABELS[country] || country}`
+    : 'Pays indéterminé (cas anormal)';
+  renderManageBranchesList();
+  document.getElementById('agt-manage-modal').classList.remove('hidden');
+}
+
+function closeManageBranchesModal() {
+  document.getElementById('agt-manage-modal').classList.add('hidden');
+  currentManageAgentId = null;
+}
+
+function renderManageBranchRow(agent, branch) {
+  const existing = (agent.memberships || []).find(m => m.branch_id === branch.id);
+  let actionBtn;
+  let infoLabel;
+  if (existing) {
+    actionBtn = `<button data-tm="${existing.team_member_id}" class="agt-unassign-btn text-xs px-3 py-1 rounded-lg border border-red-200 text-red-700 hover:bg-red-50 whitespace-nowrap">Retirer</button>`;
+    infoLabel = '<span class="text-xs text-green-700">Affecté</span>';
+  } else {
+    actionBtn = `<button data-branch="${branch.id}" class="agt-assign-btn text-xs px-3 py-1 rounded-lg bg-brand-gold text-white hover:opacity-90 whitespace-nowrap">Affecter</button>`;
+    infoLabel = '<span class="text-xs text-gray-500">Non affecté</span>';
+  }
+  return `<div class="flex items-center justify-between gap-2 p-3 border border-gray-200 rounded-lg">
+    <div class="flex-1 min-w-0">
+      <p class="text-sm font-medium text-brand-navy truncate">${escapeHtml(branch.name)}</p>
+      <p class="text-xs text-gray-500 mt-0.5">${escapeHtml(branch.city)} · ${infoLabel}</p>
+    </div>
+    ${actionBtn}
+  </div>`;
+}
+
+function renderManageBranchesList() {
+  const agent = allAgents.find(a => a.id === currentManageAgentId);
+  const listEl = document.getElementById('agt-manage-list');
+  if (!agent) {
+    listEl.innerHTML = '<p class="text-sm text-gray-500 text-center py-4">Agent introuvable.</p>';
+    return;
+  }
+  const country = agentCountry(agent);
+  if (!country) {
+    listEl.innerHTML = '<p class="text-sm text-gray-500 text-center py-4">Pays indéterminé.</p>';
+    return;
+  }
+  const branchesInCountry = allBranches.filter(b => b.country === country);
+  if (branchesInCountry.length === 0) {
+    listEl.innerHTML = `<p class="text-sm text-gray-500 text-center py-4">Aucune antenne dans ${escapeHtml(COUNTRY_LABELS[country] || country)}. Créez-en une dans la page Organisation.</p>`;
+    return;
+  }
+  listEl.innerHTML = branchesInCountry.map(b => renderManageBranchRow(agent, b)).join('');
+  listEl.querySelectorAll('.agt-assign-btn').forEach(btn => {
+    btn.addEventListener('click', () => assignBranchToAgent(agent.id, btn.dataset.branch));
+  });
+  listEl.querySelectorAll('.agt-unassign-btn').forEach(btn => {
+    btn.addEventListener('click', () => removeBranchFromAgent(agent.id, btn.dataset.tm));
+  });
+}
+
+function buildAgentBody(agent, branchId) {
+  // Construit le body POST en reutilisant nom/email/phone/specialties de l'agent existant.
+  // Specialites forcees a l'identique pour coherence cross-antennes.
+  const specs = agentSpecialties(agent);
+  const specialtiesList = [...specs.list];
+  if (specs.other) specialtiesList.push('other');
+  const body = {
+    first_name: agent.first_name,
+    last_name: agent.last_name,
+    email: agent.email,
+    phone: agent.phone || '',
+    specialties: specialtiesList,
+    branch_id: branchId,
+  };
+  if (specs.other) body.specialties_other = specs.other;
+  return body;
+}
+
+async function assignBranchToAgent(agentId, branchId) {
+  const agent = allAgents.find(a => a.id === agentId);
+  if (!agent) return;
+
+  const specs = agentSpecialties(agent);
+  if (specs.list.length === 0 && !specs.other) {
+    alert("Cet agent n'a aucune spécialité enregistrée — modification impossible.");
+    return;
+  }
+
+  // Snapshot AVANT : l'agent etait-il uniquement au pool ?
+  const wasOnlyInPool = agentIsPoolOnly(agent);
+  const body = buildAgentBody(agent, branchId);
+
+  try {
+    // 1) POST nouvelle affectation (l'agent gagne une membership)
+    await apiFetch('/api/admin/team-members', { method: 'POST', body: JSON.stringify(body) });
+
+    // 2) Transition pool -> vraie antenne : retirer les memberships pool
+    //    On ne bloque pas si une DELETE echoue : au pire cas degrade "pool + affecte" visible.
+    if (wasOnlyInPool) {
+      const poolMemberships = (agent.memberships || []).filter(m => m.branch_id && m.branch_id.startsWith('branch_pool_'));
+      for (const pm of poolMemberships) {
+        try {
+          await apiFetch(`/api/admin/team-members/${pm.team_member_id}`, { method: 'DELETE' });
+        } catch (delErr) {
+          console.warn('Impossible de retirer membership pool', pm.team_member_id, delErr);
+        }
+      }
+    }
+
+    await loadAll();
+    renderManageBranchesList();
+  } catch (err) {
+    alert(friendlyErr(err));
+  }
+}
+
+async function removeBranchFromAgent(agentId, teamMemberId) {
+  const agent = allAgents.find(a => a.id === agentId);
+  if (!agent) return;
+
+  const realMemberships = (agent.memberships || []).filter(m => m.branch_id && !m.branch_id.startsWith('branch_pool_'));
+  const wasLastReal = realMemberships.length === 1 && realMemberships[0].team_member_id === teamMemberId;
+
+  // Si c'est la derniere vraie membership, remettre au pool AVANT le DELETE
+  // pour ne pas laisser l'agent sans aucune membership (viole le modele).
+  if (wasLastReal) {
+    const country = agentCountry(agent);
+    if (!country) {
+      alert("Impossible de déterminer le pays — retrait annulé.");
+      return;
+    }
+    const poolId = 'branch_pool_' + country.toLowerCase();
+    const alreadyInPool = (agent.memberships || []).some(m => m.branch_id === poolId);
+
+    if (!alreadyInPool) {
+      const specs = agentSpecialties(agent);
+      if (specs.list.length === 0 && !specs.other) {
+        alert("Cet agent n'a aucune spécialité — impossible de le remettre au pool.");
+        return;
+      }
+      const body = buildAgentBody(agent, poolId);
+      try {
+        await apiFetch('/api/admin/team-members', { method: 'POST', body: JSON.stringify(body) });
+      } catch (postErr) {
+        alert('Erreur lors de la mise au pool : ' + friendlyErr(postErr));
+        return;
+      }
+    }
+  }
+
+  try {
+    await apiFetch(`/api/admin/team-members/${teamMemberId}`, { method: 'DELETE' });
+    await loadAll();
+    renderManageBranchesList();
+  } catch (err) {
+    alert(friendlyErr(err));
+  }
+}
+
 function render() {
   const specCheckboxes = SPECIALTY_ORDER.map(s =>
     `<label class="flex items-center gap-2 text-sm"><input type="checkbox" class="agt-spec-cb" value="${s}"> ${SPECIALTY_LABELS[s]}</label>`
@@ -385,6 +561,18 @@ function render() {
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- Modal Manage branches -->
+    <div id="agt-manage-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-xl p-5 max-w-lg w-full max-h-[90vh] overflow-y-auto">
+        <h3 id="agt-manage-title" class="text-base font-bold text-brand-navy mb-2">Gérer les antennes</h3>
+        <p id="agt-manage-country-info" class="text-xs text-gray-500 mb-3"></p>
+        <div id="agt-manage-list" class="space-y-2"></div>
+        <div class="flex justify-end gap-2 mt-4">
+          <button type="button" id="agt-manage-close" class="bg-brand-gold text-white px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90">Fermer</button>
+        </div>
+      </div>
     </div>`;
   return renderLayout(content);
 }
@@ -408,6 +596,7 @@ async function bind() {
       input.value = '';
     }
   });
+  document.getElementById('agt-manage-close').addEventListener('click', closeManageBranchesModal);
   await loadAll();
 }
 
