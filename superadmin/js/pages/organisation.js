@@ -5,7 +5,10 @@ const COUNTRY_LABELS = { MA: 'Maroc', DZ: 'Algérie', TN: 'Tunisie' };
 const COUNTRY_ORDER = ['MA', 'DZ', 'TN'];
 
 let allBranches = [];
+let allAdmins = [];
+let managerMap = new Map();
 let currentDeleteId = null;
+let currentManagerBranchId = null;
 
 function escapeHtml(s) {
   if (s == null) return '';
@@ -20,10 +23,12 @@ function escapeHtml(s) {
 function friendlyErr(err) {
   if (!err) return 'Erreur inconnue';
   switch (err.code) {
-    case 'MISSING_FIELDS': return 'Champs manquants : nom, pays et ville sont obligatoires.';
-    case 'INVALID_COUNTRY': return 'Pays invalide. Choisissez MA, DZ ou TN.';
-    case 'INVALID_STATUS': return 'Statut invalide. Doit être Actif ou Inactif.';
-    case 'NOT_FOUND': return 'Cette antenne n\'existe plus. La liste a été rafraîchie.';
+    case 'MISSING_FIELDS':         return 'Champs manquants : nom, pays et ville sont obligatoires.';
+    case 'INVALID_COUNTRY':        return 'Pays invalide. Choisissez MA, DZ ou TN.';
+    case 'INVALID_STATUS':         return 'Statut invalide. Doit être Actif ou Inactif.';
+    case 'NOT_FOUND':              return "Cette antenne n'existe plus. La liste a été rafraîchie.";
+    case 'ADMIN_COUNTRY_MISMATCH': return err.message || "Cet admin gère déjà une antenne dans un autre pays.";
+    case 'INVALID_MANAGER':        return "L'admin sélectionné n'est pas valide.";
     case 'CANNOT_UPDATE_POOL':
     case 'CANNOT_DELETE_POOL':
       return 'Opération impossible sur cette antenne (entité système).';
@@ -37,17 +42,23 @@ function renderBranchCard(b) {
   const coverage = b.coverage_cities
     ? `<p class="text-xs text-gray-500 mt-1">Couvre : ${escapeHtml(b.coverage_cities)}</p>`
     : '';
+  const managerLabel = b.manager_id ? managerMap.get(b.manager_id) : null;
+  const managerLine = managerLabel
+    ? `<p class="text-xs text-gray-500 mt-1">Responsable : <strong>${escapeHtml(managerLabel)}</strong></p>`
+    : `<p class="text-xs text-amber-600 mt-1">Aucun responsable assigné</p>`;
   return `<div class="bg-white rounded-xl border border-gray-200 p-4 card-hover">
     <div class="flex items-start justify-between mb-2">
       <div class="flex-1 min-w-0">
         <h3 class="font-semibold text-brand-navy text-sm truncate">${escapeHtml(b.name)}</h3>
         <p class="text-xs text-gray-500 mt-0.5">${escapeHtml(b.city)}</p>
         ${coverage}
+        ${managerLine}
       </div>
       <span class="ml-3 text-xs px-2 py-0.5 rounded-full font-medium whitespace-nowrap ${statusClass}">${statusLabel}</span>
     </div>
     <div class="flex gap-2 mt-3">
       <button data-edit="${b.id}" class="org-edit-btn text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50">Éditer</button>
+      <button data-manager="${b.id}" class="org-manager-btn text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50">Responsable</button>
       <button data-delete="${b.id}" class="org-delete-btn text-xs px-3 py-1.5 rounded-lg border border-red-200 text-red-700 hover:bg-red-50">Supprimer</button>
     </div>
   </div>`;
@@ -84,16 +95,19 @@ function groupAndRender() {
   attachCardListeners();
 }
 
-async function loadBranches() {
+async function loadAll() {
   document.getElementById('org-loading').classList.remove('hidden');
   document.getElementById('org-empty').classList.add('hidden');
   document.getElementById('org-list').classList.add('hidden');
   try {
-    const data = await apiFetch('/api/admin/branches');
-    // Defense en profondeur : double-filtre des pools cote client (le backend
-    // les filtre deja, mais si le filtre backend sautait par erreur, aucun
-    // pool n'apparaitrait dans l'UI).
-    allBranches = (data.branches || []).filter(b => !b.id.startsWith('branch_pool_'));
+    const [branchesData, adminsData] = await Promise.all([
+      apiFetch('/api/admin/branches'),
+      apiFetch('/api/admin/branch-admins'),
+    ]);
+    // Defense en profondeur : double-filtre des pools cote client.
+    allBranches = (branchesData.branches || []).filter(b => !b.id.startsWith('branch_pool_'));
+    allAdmins = adminsData.admins || [];
+    managerMap = new Map(allAdmins.map(a => [a.id, `${a.first_name} ${a.last_name}`]));
     groupAndRender();
   } catch (err) {
     console.error(err);
@@ -108,6 +122,9 @@ async function loadBranches() {
 function attachCardListeners() {
   document.querySelectorAll('.org-edit-btn').forEach(btn => {
     btn.addEventListener('click', () => openEditModal(btn.dataset.edit));
+  });
+  document.querySelectorAll('.org-manager-btn').forEach(btn => {
+    btn.addEventListener('click', () => openManagerModal(btn.dataset.manager));
   });
   document.querySelectorAll('.org-delete-btn').forEach(btn => {
     btn.addEventListener('click', () => openDeleteModal(btn.dataset.delete));
@@ -168,7 +185,6 @@ async function submitForm(e) {
   submitBtn.textContent = 'Envoi…';
   try {
     if (id) {
-      // Edit — never send country/id (PUT les ignore de toute facon, mais on ne pollue pas).
       const body = {
         name,
         city,
@@ -181,7 +197,6 @@ async function submitForm(e) {
       };
       await apiFetch(`/api/admin/branches/${id}`, { method: 'PUT', body: JSON.stringify(body) });
     } else {
-      // Create — n'envoyer que les champs renseignes (le backend a ses propres defaults).
       const body = { name, country, city };
       const phone = document.getElementById('org-form-phone').value.trim();
       const email = document.getElementById('org-form-email').value.trim();
@@ -196,12 +211,11 @@ async function submitForm(e) {
       await apiFetch('/api/admin/branches', { method: 'POST', body: JSON.stringify(body) });
     }
     closeFormModal();
-    await loadBranches();
+    await loadAll();
   } catch (err) {
-    // Race condition : l'antenne a ete supprimee entre l'affichage et le submit.
     if (err.code === 'NOT_FOUND') {
       closeFormModal();
-      await loadBranches();
+      await loadAll();
     }
     alert(friendlyErr(err));
   } finally {
@@ -244,17 +258,83 @@ async function confirmDelete() {
   try {
     await apiFetch(`/api/admin/branches/${currentDeleteId}`, { method: 'DELETE' });
     closeDeleteModal();
-    await loadBranches();
+    await loadAll();
   } catch (err) {
     if (err.code === 'NOT_FOUND') {
-      // Course condition : l'antenne a ete supprimee entre le clic et la confirm.
       closeDeleteModal();
-      await loadBranches();
+      await loadAll();
     } else {
       btn.disabled = false;
       btn.textContent = 'Confirmer la suppression';
     }
     alert(friendlyErr(err));
+  }
+}
+
+// --- Manager assignment modal ---
+
+function openManagerModal(branchId) {
+  const b = allBranches.find(x => x.id === branchId);
+  if (!b) return;
+  currentManagerBranchId = branchId;
+  document.getElementById('org-manager-title').textContent = `Responsable — ${b.name}`;
+  document.getElementById('org-manager-subtitle').textContent = `Pays : ${COUNTRY_LABELS[b.country] || b.country}`;
+
+  // Peupler le select : admins du meme pays + admins non-affectes (sans pays defini).
+  const select = document.getElementById('org-manager-select');
+  while (select.options.length > 1) select.remove(1);
+
+  const eligible = allAdmins.filter(a => {
+    const c = a.branches && a.branches.length > 0 ? a.branches[0].country : null;
+    return c === null || c === b.country;
+  });
+  for (const a of eligible) {
+    const opt = document.createElement('option');
+    opt.value = a.id;
+    opt.textContent = `${a.first_name} ${a.last_name} (${a.email})`;
+    if (a.id === b.manager_id) opt.selected = true;
+    select.appendChild(opt);
+  }
+
+  document.getElementById('org-manager-modal').classList.remove('hidden');
+}
+
+function closeManagerModal() {
+  document.getElementById('org-manager-modal').classList.add('hidden');
+  currentManagerBranchId = null;
+}
+
+async function saveManager() {
+  if (!currentManagerBranchId) return;
+  const select = document.getElementById('org-manager-select');
+  const managerId = select.value || null;
+
+  // Confirmation transfert si l'antenne a deja un autre manager.
+  const b = allBranches.find(x => x.id === currentManagerBranchId);
+  if (managerId && b && b.manager_id && b.manager_id !== managerId) {
+    const otherName = managerMap.get(b.manager_id) || 'un autre admin';
+    if (!confirm(`Cette antenne est actuellement gérée par ${otherName}. Transférer ?`)) return;
+  }
+
+  const btn = document.getElementById('org-manager-save');
+  btn.disabled = true;
+  btn.textContent = 'Enregistrement…';
+  try {
+    await apiFetch(`/api/admin/branches/${currentManagerBranchId}/manager`, {
+      method: 'PUT',
+      body: JSON.stringify({ manager_id: managerId }),
+    });
+    closeManagerModal();
+    await loadAll();
+  } catch (err) {
+    if (err.code === 'NOT_FOUND') {
+      closeManagerModal();
+      await loadAll();
+    }
+    alert(friendlyErr(err));
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Enregistrer';
   }
 }
 
@@ -342,6 +422,25 @@ function render() {
           <button id="org-delete-confirm" class="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-700">Confirmer la suppression</button>
         </div>
       </div>
+    </div>
+
+    <!-- Modal Manager assignment -->
+    <div id="org-manager-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-xl p-5 max-w-md w-full max-h-[90vh] overflow-y-auto">
+        <h3 id="org-manager-title" class="text-base font-bold text-brand-navy mb-2">Responsable de l'antenne</h3>
+        <p id="org-manager-subtitle" class="text-xs text-gray-500 mb-3"></p>
+        <div>
+          <label class="block text-xs text-gray-600 mb-1">Admin du même pays</label>
+          <select id="org-manager-select" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white">
+            <option value="">— Aucun (retirer le responsable) —</option>
+          </select>
+          <p class="text-[10px] text-gray-400 mt-1">Les admins non affectés et ceux du pays de cette antenne sont éligibles.</p>
+        </div>
+        <div class="flex justify-end gap-2 mt-4">
+          <button type="button" id="org-manager-cancel" class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Annuler</button>
+          <button type="button" id="org-manager-save" class="bg-brand-gold text-white px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90">Enregistrer</button>
+        </div>
+      </div>
     </div>`;
   return renderLayout(content);
 }
@@ -353,7 +452,9 @@ async function bind() {
   document.getElementById('org-form').addEventListener('submit', submitForm);
   document.getElementById('org-delete-cancel').addEventListener('click', closeDeleteModal);
   document.getElementById('org-delete-confirm').addEventListener('click', confirmDelete);
-  await loadBranches();
+  document.getElementById('org-manager-cancel').addEventListener('click', closeManagerModal);
+  document.getElementById('org-manager-save').addEventListener('click', saveManager);
+  await loadAll();
 }
 
 export { render, bind };
